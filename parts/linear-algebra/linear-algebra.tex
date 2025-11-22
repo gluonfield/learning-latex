@@ -12,6 +12,16 @@
   (associativity, commutativity, distributivity, existence of $0$ and additive inverses, etc.).
 \end{definition}
 
+\begin{definition}[Span]
+  Let $S = \{\mathbf{v}_1,\dots,\mathbf{v}_n\}$ be a set of vectors in a vector space $V$.
+  The \emph{span} of $S$, denoted $\operatorname{span}(S)$ or $\operatorname{span}(\mathbf{v}_1,\dots,\mathbf{v}_n)$,
+  is the set of all linear combinations of vectors in $S$:
+  \[
+    \operatorname{span}(\mathbf{v}_1,\dots,\mathbf{v}_n) = \left\{ \sum_{i=1}^{n} \alpha_i \mathbf{v}_i : \alpha_i \in \mathbb{F} \right\}.
+  \]
+  We say that $S$ \emph{spans} $V$ if $\operatorname{span}(S) = V$.
+\end{definition}
+
 \begin{definition}[Linear independence]
   A family of vectors $(\mathbf{v}_1,\dots,\mathbf{v}_n)$ in a vector space $V$ is
   \emph{linearly independent} if
@@ -20,6 +30,53 @@
   \]
   implies $\alpha_1 = \dots = \alpha_n = 0$.
 \end{definition}
+
+\begin{definition}[Basis]
+  A \emph{basis} of a vector space $V$ is a linearly independent set of vectors that spans $V$.
+  That is, a family $\mathcal{B} = (\mathbf{v}_1,\dots,\mathbf{v}_n)$ is a basis if:
+  \begin{enumerate}
+    \item $\mathcal{B}$ is linearly independent, and
+    \item every vector $\mathbf{v} \in V$ can be written as a linear combination
+          $\mathbf{v} = \alpha_1\mathbf{v}_1 + \dots + \alpha_n\mathbf{v}_n$ for some scalars $\alpha_1,\dots,\alpha_n$.
+  \end{enumerate}
+\end{definition}
+
+\begin{definition}[Dimension]
+  The \emph{dimension} of a vector space $V$, denoted $\dim(V)$, is the number of vectors in any basis of $V$.
+  If $V$ has a finite basis, then $V$ is \emph{finite-dimensional}; otherwise, $V$ is \emph{infinite-dimensional}.
+\end{definition}
+
+\section{Inner Product Spaces}
+
+\begin{definition}[Inner product space]
+  An \emph{inner product space} is a vector space $V$ over $\mathbb{F}$ (where $\mathbb{F} = \mathbb{R}$ or $\mathbb{C}$)
+  equipped with an inner product $\langle \cdot, \cdot \rangle : V \times V \to \mathbb{F}$ satisfying:
+  \begin{enumerate}
+    \item Conjugate symmetry: $\langle \mathbf{v}, \mathbf{w} \rangle = \overline{\langle \mathbf{w}, \mathbf{v} \rangle}$,
+    \item Linearity in the first argument: $\langle \alpha\mathbf{u} + \beta\mathbf{v}, \mathbf{w} \rangle = \alpha\langle \mathbf{u}, \mathbf{w} \rangle + \beta\langle \mathbf{v}, \mathbf{w} \rangle$,
+    \item Positive definiteness: $\langle \mathbf{v}, \mathbf{v} \rangle \geq 0$ with equality if and only if $\mathbf{v} = \mathbf{0}$.
+  \end{enumerate}
+\end{definition}
+
+\begin{definition}[Orthogonality]
+  Two vectors $\mathbf{v}, \mathbf{w} \in V$ are \emph{orthogonal} if $\langle \mathbf{v}, \mathbf{w} \rangle = 0$.
+  A set of vectors $\{\mathbf{v}_1,\dots,\mathbf{v}_n\}$ is \emph{orthogonal} if the vectors are pairwise orthogonal.
+  An orthogonal set is \emph{orthonormal} if additionally $\langle \mathbf{v}_i, \mathbf{v}_i \rangle = 1$ for all $i$.
+\end{definition}
+
+\begin{theorem}[Gram--Schmidt decomposition]
+  Let $V$ be an inner product space and let $(\mathbf{v}_1,\dots,\mathbf{v}_n)$ be a linearly independent family of vectors in $V$.
+  Then there exists an orthonormal family $(\mathbf{u}_1,\dots,\mathbf{u}_n)$ such that for each $k = 1,\dots,n$,
+  \[
+    \operatorname{span}(\mathbf{v}_1,\dots,\mathbf{v}_k) = \operatorname{span}(\mathbf{u}_1,\dots,\mathbf{u}_k).
+  \]
+  Moreover, the vectors $\mathbf{u}_k$ can be constructed recursively by the Gram--Schmidt process:
+  \begin{align*}
+    \mathbf{w}_1 & = \mathbf{v}_1, \quad \mathbf{u}_1 = \frac{\mathbf{w}_1}{\|\mathbf{w}_1\|},                                                                           \\
+    \mathbf{w}_k & = \mathbf{v}_k - \sum_{j=1}^{k-1} \langle \mathbf{v}_k, \mathbf{u}_j \rangle \mathbf{u}_j, \quad \mathbf{u}_k = \frac{\mathbf{w}_k}{\|\mathbf{w}_k\|}
+  \end{align*}
+  for $k = 2,\dots,n$, where $\|\mathbf{v}\| = \sqrt{\langle \mathbf{v}, \mathbf{v} \rangle}$.
+\end{theorem}
 
 \section{Linear Operators and Matrices}
 
