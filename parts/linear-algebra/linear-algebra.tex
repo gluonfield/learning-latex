@@ -1,0 +1,39 @@
+\part{Linear Algebra}
+
+\chapter{Vector Spaces and Linear Maps}
+
+\section{Introduction}
+
+\begin{definition}[Vector space]
+  Let $V$ be a set over a field $\mathbb{F}$.
+  We call $V$ a \emph{vector space} over $\mathbb{F}$ if it is equipped with
+  an addition $+ : V \times V \to V$ and scalar multiplication
+  $\mathbb{F} \times V \to V$ satisfying the usual axioms
+  (associativity, commutativity, distributivity, existence of $0$ and additive inverses, etc.).
+\end{definition}
+
+\begin{definition}[Linear independence]
+  A family of vectors $(\mathbf{v}_1,\dots,\mathbf{v}_n)$ in a vector space $V$ is
+  \emph{linearly independent} if
+  \[
+    \alpha_1\mathbf{v}_1 + \dots + \alpha_n\mathbf{v}_n = \mathbf{0}
+  \]
+  implies $\alpha_1 = \dots = \alpha_n = 0$.
+\end{definition}
+
+\section{Linear Operators and Matrices}
+
+\begin{definition}[Linear operator]
+  Let $V$ be a vector space over $\mathbb{F}$. A map $\mathcal{T} : V \to V$
+  is a \emph{linear operator} if for all $\mathbf{v},\mathbf{w} \in V$ and $\alpha,\beta \in \mathbb{F}$,
+  \[
+    \mathcal{T}(\alpha\mathbf{v} + \beta\mathbf{w})
+    = \alpha\mathcal{T}(\mathbf{v}) + \beta\mathcal{T}(\mathbf{w}).
+  \]
+\end{definition}
+
+\begin{remark}
+  Once a basis is fixed, $\mathcal{T}$ corresponds to a matrix $\mathbf{T}$. The notation
+  $\mathbf{v}$, $\mathbf{A}$, $\mathcal{T}$ is here to keep your mental types separated visually.
+\end{remark}
+

@@ -1,0 +1,94 @@
+\documentclass[12pt,oneside]{book}
+
+% ---------- Packages ----------
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{cleveref}
+
+% ---------- Hyperref setup (clickable TOC, links) ----------
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  urlcolor=blue!60!black,
+  citecolor=green!40!black,
+  pdftitle={Personal Mathematics Ideas},
+  pdfauthor={Augustinas Malinauskas}
+}
+
+% ---------- TOC depth ----------
+\setcounter{tocdepth}{2} % sections + subsections
+
+% ---------- Theorem-like environments ----------
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+% ---------- Title info ----------
+\title{Personal Mathematics Ideas}
+\author{Augustinas Malinauskas}
+\date{\today} % will be set to the compile date
+
+% ============================================================
+\begin{document}
+% ---------- Custom title page ----------
+\begin{titlepage}
+  \centering
+
+  \vspace*{3cm}
+
+  {\Huge\bfseries Personal Mathematics Ideas\par}
+
+  \vspace{1.5cm}
+
+  {\Large Author: \textbf{Augustinas Malinauskas}\par}
+
+  \vspace{0.5cm}
+
+  {\large Date: \today\par}
+
+  \vfill
+
+  \begin{minipage}{0.9\textwidth}
+  \small
+  These notes contains  opinionated proofs or interesting ideas in Linear Algebra, Calculus, Differential Geometry, Group Theory, Statistics, \dots
+  \end{minipage}
+
+\end{titlepage}
+
+% ---------- Front matter ----------
+\frontmatter
+\tableofcontents
+
+% ---------- Main content ----------
+\mainmatter
+
+% ============================================================
+% Part files
+% ============================================================
+\input{parts/linear-algebra/linear-algebra}
+\input{parts/differential-geometry/differential-geometry}
+\input{parts/group-theory/group-theory}
+\input{parts/statistics/statistics}
+
+% ---------- Back matter (optional) ----------
+\backmatter
+% Bibliography or index can go here later.
+
+\end{document}
