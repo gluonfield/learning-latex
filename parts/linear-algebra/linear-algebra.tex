@@ -2,7 +2,7 @@
 
 \chapter{Vector Spaces and Linear Maps}
 
-\section{Introduction}
+\section{Vector Spaces}
 
 \begin{definition}[Vector space]
   Let $V$ be a set over a field $\mathbb{F}$.
@@ -16,19 +16,20 @@
   Let $S = \{\mathbf{v}_1,\dots,\mathbf{v}_n\}$ be a set of vectors in a vector space $V$.
   The \emph{span} of $S$, denoted $\operatorname{span}(S)$ or $\operatorname{span}(\mathbf{v}_1,\dots,\mathbf{v}_n)$,
   is the set of all linear combinations of vectors in $S$:
-  \[
+  \begin{equation}
     \operatorname{span}(\mathbf{v}_1,\dots,\mathbf{v}_n) = \left\{ \sum_{i=1}^{n} \alpha_i \mathbf{v}_i : \alpha_i \in \mathbb{F} \right\}.
-  \]
+  \end{equation}
   We say that $S$ \emph{spans} $V$ if $\operatorname{span}(S) = V$.
 \end{definition}
 
 \begin{definition}[Linear independence]
   A family of vectors $(\mathbf{v}_1,\dots,\mathbf{v}_n)$ in a vector space $V$ is
   \emph{linearly independent} if
-  \[
+  \begin{equation}
     \alpha_1\mathbf{v}_1 + \dots + \alpha_n\mathbf{v}_n = \mathbf{0}
-  \]
-  implies $\alpha_1 = \dots = \alpha_n = 0$.
+    \quad \text{implies} \quad
+    \alpha_1 = \dots = \alpha_n = 0.
+  \end{equation}
 \end{definition}
 
 \begin{definition}[Basis]
@@ -71,10 +72,10 @@
     \operatorname{span}(\mathbf{v}_1,\dots,\mathbf{v}_k) = \operatorname{span}(\mathbf{u}_1,\dots,\mathbf{u}_k).
   \]
   Moreover, the vectors $\mathbf{u}_k$ can be constructed recursively by the Gram--Schmidt process:
-  \begin{align*}
-    \mathbf{w}_1 & = \mathbf{v}_1, \quad \mathbf{u}_1 = \frac{\mathbf{w}_1}{\|\mathbf{w}_1\|},                                                                           \\
-    \mathbf{w}_k & = \mathbf{v}_k - \sum_{j=1}^{k-1} \langle \mathbf{v}_k, \mathbf{u}_j \rangle \mathbf{u}_j, \quad \mathbf{u}_k = \frac{\mathbf{w}_k}{\|\mathbf{w}_k\|}
-  \end{align*}
+  \begin{align}
+    \mathbf{w}_1 & = \mathbf{v}_1, \quad \mathbf{u}_1 = \frac{\mathbf{w}_1}{\|\mathbf{w}_1\|}, \label{eq:gs-base}                                                                           \\
+    \mathbf{w}_k & = \mathbf{v}_k - \sum_{j=1}^{k-1} \langle \mathbf{v}_k, \mathbf{u}_j \rangle \mathbf{u}_j, \quad \mathbf{u}_k = \frac{\mathbf{w}_k}{\|\mathbf{w}_k\|} \label{eq:gs-step}
+  \end{align}
   for $k = 2,\dots,n$, where $\|\mathbf{v}\| = \sqrt{\langle \mathbf{v}, \mathbf{v} \rangle}$.
 \end{theorem}
 
@@ -112,19 +113,187 @@
   so $\operatorname{span}(\mathbf{v}_1,\dots,\mathbf{v}_k) = \operatorname{span}(\mathbf{u}_1,\dots,\mathbf{u}_k)$.
 \end{proof}
 
-\section{Linear Operators and Matrices}
+\section{Linear Maps}
 
-\begin{definition}[Linear operator]
-  Let $V$ be a vector space over $\mathbb{F}$. A map $\mathcal{T} : V \to V$
-  is a \emph{linear operator} if for all $\mathbf{v},\mathbf{w} \in V$ and $\alpha,\beta \in \mathbb{F}$,
-  \[
-    \mathcal{T}(\alpha\mathbf{v} + \beta\mathbf{w})
-    = \alpha\mathcal{T}(\mathbf{v}) + \beta\mathcal{T}(\mathbf{w}).
-  \]
+\begin{definition}[Linear map]
+  Let $V$ and $W$ be vector spaces over a field $\mathbb{F}$.
+  A map $T : V \to W$ is a \emph{linear map} (or \emph{linear transformation}) if for all $\mathbf{v}_1, \mathbf{v}_2 \in V$ and $\alpha, \beta \in \mathbb{F}$,
+  \begin{equation}
+    T(\alpha\mathbf{v}_1 + \beta\mathbf{v}_2) = \alpha T(\mathbf{v}_1) + \beta T(\mathbf{v}_2).
+  \end{equation}
+  A linear map from a vector space to itself, $T : V \to V$, is called a \emph{linear operator}.
+\end{definition}
+
+\begin{definition}[Image and kernel]
+  Let $T : V \to W$ be a linear map. The \emph{image} (or \emph{range}) of $T$ is
+  \begin{equation}
+    \operatorname{im}(T) = \{T(\mathbf{v}) : \mathbf{v} \in V\} \subseteq W.
+  \end{equation}
+  The \emph{kernel} (or \emph{null space}) of $T$ is
+  \begin{equation}
+    \ker(T) = \{\mathbf{v} \in V : T(\mathbf{v}) = \mathbf{0}\} \subseteq V.
+  \end{equation}
+\end{definition}
+
+\section{Matrix Representations}
+
+We now connect the abstract theory of linear maps to concrete matrix computations.
+Throughout this section, let $V$ and $W$ be finite-dimensional vector spaces over $\mathbb{F}$,
+with $\dim(V) = n$ and $\dim(W) = m$.
+
+\begin{definition}[Coordinate isomorphism]
+  Let $V$ be a vector space with basis $\mathcal{B} = (\mathbf{v}_1,\dots,\mathbf{v}_n)$.
+  The \emph{coordinate map} (or \emph{coordinate isomorphism}) is the map $\Phi_{\mathcal{B}} : V \to \mathbb{F}^n$ defined by
+  \begin{equation}
+    \Phi_{\mathcal{B}}\left(\sum_{i=1}^{n} x_i \mathbf{v}_i\right) = \begin{pmatrix} x_1 \\ \vdots \\ x_n \end{pmatrix}.
+  \end{equation}
+  This map is a linear isomorphism: it is bijective and preserves the vector space structure.
 \end{definition}
 
 \begin{remark}
-  Once a basis is fixed, $\mathcal{T}$ corresponds to a matrix $\mathbf{T}$. The notation
-  $\mathbf{v}$, $\mathbf{A}$, $\mathcal{T}$ is here to keep your mental types separated visually.
+  The coordinate map $\Phi_{\mathcal{B}}$ identifies abstract vectors in $V$ with concrete column vectors in $\mathbb{F}^n$.
+  It is an isomorphism because:
+  \begin{itemize}
+    \item Every vector $\mathbf{v} \in V$ has a unique representation as a linear combination of basis vectors.
+    \item The map preserves addition and scalar multiplication.
+  \end{itemize}
 \end{remark}
 
+\begin{theorem}[Fundamental theorem of linear algebra: Matrix representation]\label{thm:fundamental-linalg}
+  Let $T : V \to W$ be a linear map between finite-dimensional vector spaces.
+  Fix bases $\mathcal{B}_V = (\mathbf{v}_1,\dots,\mathbf{v}_n)$ of $V$ and $\mathcal{B}_W = (\mathbf{w}_1,\dots,\mathbf{w}_m)$ of $W$,
+  and let $\Phi_V : V \to \mathbb{F}^n$ and $\Phi_W : W \to \mathbb{F}^m$ be the coordinate isomorphisms.
+
+  Then there exists a unique matrix $\mathbf{A} \in \mathbb{F}^{m \times n}$ making the following diagram commute:
+  \[
+    \begin{tikzcd}[row sep=2.5cm, column sep=2.5cm]
+      V \arrow[r, "T"] \arrow[d, swap, "\Phi_V" {yshift=2pt}]
+      & W \arrow[d, "\Phi_W" {yshift=2pt}] \\
+      \mathbb{F}^n \arrow[r, swap, "\mathbf{A}"]
+      & \mathbb{F}^m
+    \end{tikzcd}
+  \]
+  where $\Phi_V$ and $\Phi_W$ are isomorphisms. Equivalently,
+  \begin{equation}\label{eq:fundamental-commute}
+    \Phi_W \circ T = \mathbf{A} \circ \Phi_V,
+  \end{equation}
+  or solving for $\mathbf{A}$,
+  \begin{equation}\label{eq:matrix-formula}
+    \mathbf{A} = \Phi_W \circ T \circ \Phi_V^{-1}.
+  \end{equation}
+
+  Equivalently, for all $\mathbf{v} \in V$,
+  \begin{equation}\label{eq:fundamental-pointwise}
+    \Phi_W(T(\mathbf{v})) = \mathbf{A} \, \Phi_V(\mathbf{v}).
+  \end{equation}
+
+  The matrix $\mathbf{A}$ is constructed as follows: write each $T(\mathbf{v}_j)$ as a linear combination
+  \begin{equation}\label{eq:matrix-columns}
+    T(\mathbf{v}_j) = \sum_{i=1}^{m} a_{ij} \mathbf{w}_i.
+  \end{equation}
+  Then the $j$-th column of $\mathbf{A}$ is $(a_{1j}, a_{2j}, \dots, a_{mj})^{\mathsf{T}}$.
+\end{theorem}
+
+\begin{proof}
+  Define the matrix $\mathbf{A} = (a_{ij}) \in \mathbb{F}^{m \times n}$ using the coefficients from \eqref{eq:matrix-columns}.
+  We must show that the diagram commutes, i.e., that $\Phi_W \circ T = \mathbf{A} \circ \Phi_V$.
+
+  Let $\mathbf{v} = \sum_{j=1}^{n} x_j \mathbf{v}_j \in V$ be arbitrary. Then $\Phi_V(\mathbf{v}) = (x_1, \dots, x_n)^{\mathsf{T}}$.
+
+  \textbf{Top path} ($V \to W \to \mathbb{F}^m$): Apply $T$ then $\Phi_W$.
+  \begin{align*}
+    T(\mathbf{v}) & = T\left(\sum_{j=1}^{n} x_j \mathbf{v}_j\right) = \sum_{j=1}^{n} x_j T(\mathbf{v}_j) \quad \text{(by linearity)}              \\
+                  & = \sum_{j=1}^{n} x_j \sum_{i=1}^{m} a_{ij} \mathbf{w}_i = \sum_{i=1}^{m} \left(\sum_{j=1}^{n} a_{ij} x_j\right) \mathbf{w}_i.
+  \end{align*}
+  Applying $\Phi_W$ gives
+  \[
+    \Phi_W(T(\mathbf{v})) = \begin{pmatrix} \sum_{j=1}^{n} a_{1j} x_j \\ \vdots \\ \sum_{j=1}^{n} a_{mj} x_j \end{pmatrix}.
+  \]
+
+  \textbf{Bottom path} ($V \to \mathbb{F}^n \to \mathbb{F}^m$): Apply $\Phi_V$ then $\mathbf{A}$.
+  \[
+    \mathbf{A} \, \Phi_V(\mathbf{v}) = \mathbf{A} \begin{pmatrix} x_1 \\ \vdots \\ x_n \end{pmatrix} = \begin{pmatrix} \sum_{j=1}^{n} a_{1j} x_j \\ \vdots \\ \sum_{j=1}^{n} a_{mj} x_j \end{pmatrix}.
+  \]
+
+  Both paths give the same result, so the diagram commutes.
+
+  Uniqueness: The matrix $\mathbf{A}$ is uniquely determined by requiring commutativity at the basis vectors $\mathbf{v}_j$,
+  which forces the columns to be as in \eqref{eq:matrix-columns}. By linearity, this determines $\mathbf{A}$ on all of $V$.
+\end{proof}
+
+\begin{remark}[Significance of the formula $\mathbf{A} = \Phi_W \circ T \circ \Phi_V^{-1}$]
+  The formula \eqref{eq:matrix-formula} reveals the deep connection between abstract linear maps and matrices:
+  \begin{itemize}
+    \item \textbf{To compute $\mathbf{A}\mathbf{x}$}: Start with coordinates $\mathbf{x} \in \mathbb{F}^n$, convert to abstract vector via $\Phi_V^{-1}$,
+          apply the abstract map $T$, then convert back to coordinates via $\Phi_W$.
+
+    \item \textbf{The coordinate maps are isomorphisms}: Both $\Phi_V$ and $\Phi_W$ are linear, bijective, and invertible.
+          This means every finite-dimensional vector space is "the same as" $\mathbb{F}^n$ once we pick a basis.
+
+    \item \textbf{Change of perspective}: The same linear transformation $T$ has different matrix representations depending on
+          the choice of bases. The matrix $\mathbf{A}$ is not intrinsic to $T$, but depends on our coordinate systems.
+
+    \item \textbf{Composition of maps}: The formula shows that matrix multiplication corresponds to composition of linear maps
+          after translating between abstract and coordinate viewpoints.
+  \end{itemize}
+\end{remark}
+
+\begin{remark}
+  We sometimes write $[T]_{\mathcal{B}_W,\mathcal{B}_V} = \mathbf{A}$ to denote the matrix representation of $T$ with respect to the given bases.
+  When $V = W$ and both bases are the same $\mathcal{B}$, we write $[T]_{\mathcal{B}}$.
+\end{remark}
+
+\begin{corollary}[The case of $\mathbb{F}^n$]
+  Let $T : \mathbb{F}^n \to \mathbb{F}^m$ be a linear map.
+  Using the standard basis $\mathcal{E} = (\mathbf{e}_1,\dots,\mathbf{e}_n)$, the coordinate map is the identity: $\Phi_{\mathcal{E}}(\mathbf{x}) = \mathbf{x}$.
+  Therefore, for all $\mathbf{x} \in \mathbb{F}^n$,
+  \begin{equation}
+    T(\mathbf{x}) = \mathbf{A}\mathbf{x},
+  \end{equation}
+  where $\mathbf{A} \in \mathbb{F}^{m \times n}$ has $j$-th column $\mathbf{A}_{:,j} = T(\mathbf{e}_j)$.
+\end{corollary}
+
+\begin{proof}
+  For the standard basis, $\Phi_{\mathcal{E}}$ is the identity map since every $\mathbf{x} \in \mathbb{F}^n$ is already written
+  as its coordinate vector. The commutative diagram becomes
+  \[
+    \begin{tikzcd}[row sep=large, column sep=large]
+      \mathbb{F}^n \arrow[r, "T"] \arrow[d, "\text{id}"'] & \mathbb{F}^m \arrow[d, "\text{id}"] \\
+      \mathbb{F}^n \arrow[r, "\mathbf{A}"'] & \mathbb{F}^m
+    \end{tikzcd}
+  \]
+  which immediately gives $T = \mathbf{A}$ (as maps).
+\end{proof}
+
+\subsection{Subspaces of $\mathbb{R}^d$}
+
+For the special case of $\mathbb{R}^d$ with the standard inner product $\langle \mathbf{x}, \mathbf{y} \rangle = \mathbf{x}^{\mathsf{T}}\mathbf{y}$,
+we have the following useful characterization.
+
+\begin{lemma}[Orthonormal matrix characterization of subspaces]
+  Let $S \subseteq \mathbb{R}^d$ be a $k$-dimensional subspace. Then:
+  \begin{enumerate}
+    \item There exists a matrix $\mathbf{W} \in \mathbb{R}^{d \times k}$ such that the columns of $\mathbf{W}$ form an orthonormal basis of $S$.
+    \item Conversely, any matrix $\mathbf{W} \in \mathbb{R}^{d \times k}$ with
+          \begin{equation}
+            \mathbf{W}^{\mathsf{T}}\mathbf{W} = \mathbf{I}_k
+          \end{equation}
+          defines a $k$-dimensional subspace
+          \begin{equation}
+            S = \{\mathbf{W}\mathbf{z} : \mathbf{z} \in \mathbb{R}^k\}.
+          \end{equation}
+  \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+  (1) Since $S$ is a $k$-dimensional subspace of $\mathbb{R}^d$, it has a basis $(\mathbf{v}_1,\dots,\mathbf{v}_k)$.
+  By the Gram--Schmidt decomposition, we can construct an orthonormal basis $(\mathbf{u}_1,\dots,\mathbf{u}_k)$ for $S$.
+  Let $\mathbf{W} \in \mathbb{R}^{d \times k}$ be the matrix whose columns are $\mathbf{u}_1,\dots,\mathbf{u}_k$.
+  Then the columns of $\mathbf{W}$ form an orthonormal basis of $S$.
+
+  (2) Suppose $\mathbf{W} \in \mathbb{R}^{d \times k}$ satisfies $\mathbf{W}^{\mathsf{T}}\mathbf{W} = \mathbf{I}_k$.
+  This condition means that the columns $\mathbf{w}_1,\dots,\mathbf{w}_k$ of $\mathbf{W}$ are orthonormal:
+  $\langle \mathbf{w}_i, \mathbf{w}_j \rangle = \delta_{ij}$ for all $i,j$.
+  In particular, the columns are linearly independent, so $S = \operatorname{span}(\mathbf{w}_1,\dots,\mathbf{w}_k) = \{\mathbf{W}\mathbf{z} : \mathbf{z} \in \mathbb{R}^k\}$
+  is a $k$-dimensional subspace of $\mathbb{R}^d$.
+\end{proof}
