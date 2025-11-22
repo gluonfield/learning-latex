@@ -78,6 +78,40 @@
   for $k = 2,\dots,n$, where $\|\mathbf{v}\| = \sqrt{\langle \mathbf{v}, \mathbf{v} \rangle}$.
 \end{theorem}
 
+\begin{proof}
+  We proceed by induction on $k$. For the base case $k=1$, set $\mathbf{u}_1 = \mathbf{v}_1 / \|\mathbf{v}_1\|$.
+  Since $\mathbf{v}_1 \neq \mathbf{0}$ (by linear independence), we have $\|\mathbf{u}_1\| = 1$,
+  and clearly $\operatorname{span}(\mathbf{v}_1) = \operatorname{span}(\mathbf{u}_1)$.
+
+  Now assume we have constructed orthonormal vectors $\mathbf{u}_1,\dots,\mathbf{u}_{k-1}$ such that
+  $\operatorname{span}(\mathbf{v}_1,\dots,\mathbf{v}_j) = \operatorname{span}(\mathbf{u}_1,\dots,\mathbf{u}_j)$ for all $j < k$.
+
+  Define
+  \[
+    \mathbf{w}_k = \mathbf{v}_k - \sum_{j=1}^{k-1} \langle \mathbf{v}_k, \mathbf{u}_j \rangle \mathbf{u}_j.
+  \]
+  We claim that $\mathbf{w}_k \neq \mathbf{0}$ and that $\mathbf{w}_k$ is orthogonal to each $\mathbf{u}_i$ for $i < k$.
+
+  To see orthogonality, for any $1 \leq i \leq k-1$, we compute:
+  \begin{align*}
+    \langle \mathbf{w}_k, \mathbf{u}_i \rangle
+     & = \left\langle \mathbf{v}_k - \sum_{j=1}^{k-1} \langle \mathbf{v}_k, \mathbf{u}_j \rangle \mathbf{u}_j, \mathbf{u}_i \right\rangle                    \\
+     & = \langle \mathbf{v}_k, \mathbf{u}_i \rangle - \sum_{j=1}^{k-1} \langle \mathbf{v}_k, \mathbf{u}_j \rangle \langle \mathbf{u}_j, \mathbf{u}_i \rangle \\
+     & = \langle \mathbf{v}_k, \mathbf{u}_i \rangle - \langle \mathbf{v}_k, \mathbf{u}_i \rangle = 0,
+  \end{align*}
+  where we used orthonormality: $\langle \mathbf{u}_j, \mathbf{u}_i \rangle = \delta_{ij}$.
+
+  To see that $\mathbf{w}_k \neq \mathbf{0}$, suppose $\mathbf{w}_k = \mathbf{0}$. Then
+  \[
+    \mathbf{v}_k = \sum_{j=1}^{k-1} \langle \mathbf{v}_k, \mathbf{u}_j \rangle \mathbf{u}_j \in \operatorname{span}(\mathbf{u}_1,\dots,\mathbf{u}_{k-1}) = \operatorname{span}(\mathbf{v}_1,\dots,\mathbf{v}_{k-1}),
+  \]
+  contradicting the linear independence of $(\mathbf{v}_1,\dots,\mathbf{v}_n)$.
+
+  Thus we can set $\mathbf{u}_k = \mathbf{w}_k / \|\mathbf{w}_k\|$, which has norm $1$ and is orthogonal to $\mathbf{u}_1,\dots,\mathbf{u}_{k-1}$.
+  By construction, $\mathbf{v}_k \in \operatorname{span}(\mathbf{u}_1,\dots,\mathbf{u}_k)$ and $\mathbf{u}_k \in \operatorname{span}(\mathbf{v}_1,\dots,\mathbf{v}_k)$,
+  so $\operatorname{span}(\mathbf{v}_1,\dots,\mathbf{v}_k) = \operatorname{span}(\mathbf{u}_1,\dots,\mathbf{u}_k)$.
+\end{proof}
+
 \section{Linear Operators and Matrices}
 
 \begin{definition}[Linear operator]
