@@ -65,6 +65,64 @@
   An orthogonal set is \emph{orthonormal} if additionally $\langle \mathbf{v}_i, \mathbf{v}_i \rangle = 1$ for all $i$.
 \end{definition}
 
+\begin{definition}[Frobenius inner product for matrices]
+  The space of $m \times n$ matrices $\mathbb{R}^{m \times n}$ (or $\mathbb{C}^{m \times n}$) is an inner product space with the \emph{Frobenius inner product}
+  \begin{equation}
+    \langle \mathbf{A}, \mathbf{B} \rangle_F = \operatorname{tr}(\mathbf{A}^{\mathsf{T}}\mathbf{B}) = \sum_{i=1}^{m}\sum_{j=1}^{n} a_{ij}b_{ij}.
+  \end{equation}
+\end{definition}
+
+\begin{definition}[Frobenius norm]
+  The \emph{Frobenius norm} of a matrix $\mathbf{A} \in \mathbb{R}^{m \times n}$ is
+  \begin{equation}
+    \|\mathbf{A}\|_F = \sqrt{\sum_{i=1}^{m}\sum_{j=1}^{n} a_{ij}^2} = \sqrt{\langle \mathbf{A}, \mathbf{A} \rangle_F}.
+  \end{equation}
+\end{definition}
+
+\begin{proposition}[Frobenius norm via trace]\label{prop:frobenius-trace}
+  For any matrix $\mathbf{A} \in \mathbb{R}^{m \times n}$,
+  \begin{equation}\label{eq:frobenius-trace}
+    \|\mathbf{A}\|_F^2 = \operatorname{tr}(\mathbf{A}^{\mathsf{T}}\mathbf{A}) = \operatorname{tr}(\mathbf{A}\mathbf{A}^{\mathsf{T}}).
+  \end{equation}
+\end{proposition}
+
+\begin{proof}
+  Let $\mathbf{A} = (a_{ij}) \in \mathbb{R}^{m \times n}$. We compute $\mathbf{A}^{\mathsf{T}}\mathbf{A} \in \mathbb{R}^{n \times n}$:
+  \[
+    (\mathbf{A}^{\mathsf{T}}\mathbf{A})_{jk} = \sum_{i=1}^{m} a_{ij} a_{ik}.
+  \]
+  The diagonal entries are:
+  \[
+    (\mathbf{A}^{\mathsf{T}}\mathbf{A})_{jj} = \sum_{i=1}^{m} a_{ij}^2.
+  \]
+  Taking the trace (sum of diagonal entries):
+  \[
+    \operatorname{tr}(\mathbf{A}^{\mathsf{T}}\mathbf{A}) = \sum_{j=1}^{n} (\mathbf{A}^{\mathsf{T}}\mathbf{A})_{jj} = \sum_{j=1}^{n} \sum_{i=1}^{m} a_{ij}^2 = \sum_{i=1}^{m}\sum_{j=1}^{n} a_{ij}^2 = \|\mathbf{A}\|_F^2.
+  \]
+
+  For the second equality, compute $\mathbf{A}\mathbf{A}^{\mathsf{T}} \in \mathbb{R}^{m \times m}$:
+  \[
+    (\mathbf{A}\mathbf{A}^{\mathsf{T}})_{ik} = \sum_{j=1}^{n} a_{ij} a_{kj}.
+  \]
+  The diagonal entries are:
+  \[
+    (\mathbf{A}\mathbf{A}^{\mathsf{T}})_{ii} = \sum_{j=1}^{n} a_{ij}^2.
+  \]
+  Taking the trace:
+  \[
+    \operatorname{tr}(\mathbf{A}\mathbf{A}^{\mathsf{T}}) = \sum_{i=1}^{m} (\mathbf{A}\mathbf{A}^{\mathsf{T}})_{ii} = \sum_{i=1}^{m} \sum_{j=1}^{n} a_{ij}^2 = \|\mathbf{A}\|_F^2.
+  \]
+\end{proof}
+
+\begin{remark}
+  The Frobenius norm treats a matrix as a vector by summing the squares of all entries.
+  For a matrix with rows $\mathbf{a}_1^{\mathsf{T}},\dots,\mathbf{a}_m^{\mathsf{T}} \in \mathbb{R}^n$, we have
+  \[
+    \|\mathbf{A}\|_F^2 = \sum_{i=1}^{m} \|\mathbf{a}_i\|^2.
+  \]
+  The Frobenius norm is submultiplicative: $\|\mathbf{A}\mathbf{B}\|_F \leq \|\mathbf{A}\|_F \|\mathbf{B}\|_F$.
+\end{remark}
+
 \begin{theorem}[Gram--Schmidt decomposition]
   Let $V$ be an inner product space and let $(\mathbf{v}_1,\dots,\mathbf{v}_n)$ be a linearly independent family of vectors in $V$.
   Then there exists an orthonormal family $(\mathbf{u}_1,\dots,\mathbf{u}_n)$ such that for each $k = 1,\dots,n$,
@@ -113,6 +171,19 @@
   so $\operatorname{span}(\mathbf{v}_1,\dots,\mathbf{v}_k) = \operatorname{span}(\mathbf{u}_1,\dots,\mathbf{u}_k)$.
 \end{proof}
 
+\begin{remark}[Applications of Gram--Schmidt]
+  The Gram--Schmidt process is fundamental across many fields:
+  \begin{itemize}
+    \item \textbf{Machine learning}: QR decomposition (based on Gram--Schmidt) is used for numerically stable least-squares regression. Orthogonalizing feature vectors removes redundancy and improves conditioning of optimization problems.
+
+    \item \textbf{Quantum mechanics}: States in a quantum system must be represented by orthonormal vectors in a Hilbert space. Gram--Schmidt is used to orthogonalize measurement bases and construct complete orthonormal sets of wavefunctions.
+
+    \item \textbf{Signal processing}: Constructing orthonormal bases (like wavelets or Fourier bases) for signal decomposition. Orthogonal projections onto signal subspaces are used in noise reduction and compression.
+
+    \item \textbf{Numerical analysis}: The QR algorithm for eigenvalue computation relies on repeated Gram--Schmidt orthogonalization. Stable numerical solvers for differential equations use orthogonal polynomial bases constructed via Gram--Schmidt.
+  \end{itemize}
+\end{remark}
+
 \section{Linear Maps}
 
 \begin{definition}[Linear map]
@@ -137,7 +208,15 @@
 
 \section{Matrix Representations}
 
-We now connect the abstract theory of linear maps to concrete matrix computations.
+\subsection{Motivation}
+
+Linear maps between abstract vector spaces (like function spaces or polynomial spaces) seem very different from
+matrix-vector multiplication. However, once we choose bases, every linear map can be represented as a matrix.
+This is the bridge between abstract linear algebra and concrete computation.
+
+\textbf{The key insight}: A basis gives us a "coordinate system" that identifies an abstract vector space $V$ with $\mathbb{F}^n$.
+Once we have coordinates, linear maps become matrices.
+
 Throughout this section, let $V$ and $W$ be finite-dimensional vector spaces over $\mathbb{F}$,
 with $\dim(V) = n$ and $\dim(W) = m$.
 
@@ -159,12 +238,16 @@ with $\dim(V) = n$ and $\dim(W) = m$.
   \end{itemize}
 \end{remark}
 
-\begin{theorem}[Fundamental theorem of linear algebra: Matrix representation]\label{thm:fundamental-linalg}
+\begin{theorem}[Fundamental theorem: Every linear map is a matrix]\label{thm:fundamental-linalg}
   Let $T : V \to W$ be a linear map between finite-dimensional vector spaces.
   Fix bases $\mathcal{B}_V = (\mathbf{v}_1,\dots,\mathbf{v}_n)$ of $V$ and $\mathcal{B}_W = (\mathbf{w}_1,\dots,\mathbf{w}_m)$ of $W$,
   and let $\Phi_V : V \to \mathbb{F}^n$ and $\Phi_W : W \to \mathbb{F}^m$ be the coordinate isomorphisms.
 
-  Then there exists a unique matrix $\mathbf{A} \in \mathbb{F}^{m \times n}$ making the following diagram commute:
+  Then there exists a unique matrix $\mathbf{A} \in \mathbb{F}^{m \times n}$ such that
+  \begin{equation}\label{eq:matrix-formula}
+    \mathbf{A} = \Phi_W \circ T \circ \Phi_V^{-1}.
+  \end{equation}
+  Equivalently, the following diagram commutes:
   \[
     \begin{tikzcd}[row sep=2.5cm, column sep=2.5cm]
       V \arrow[r, "T"] \arrow[d, swap, "\Phi_V" {yshift=2pt}]
@@ -173,21 +256,8 @@ with $\dim(V) = n$ and $\dim(W) = m$.
       & \mathbb{F}^m
     \end{tikzcd}
   \]
-  where $\Phi_V$ and $\Phi_W$ are isomorphisms. Equivalently,
-  \begin{equation}\label{eq:fundamental-commute}
-    \Phi_W \circ T = \mathbf{A} \circ \Phi_V,
-  \end{equation}
-  or solving for $\mathbf{A}$,
-  \begin{equation}\label{eq:matrix-formula}
-    \mathbf{A} = \Phi_W \circ T \circ \Phi_V^{-1}.
-  \end{equation}
 
-  Equivalently, for all $\mathbf{v} \in V$,
-  \begin{equation}\label{eq:fundamental-pointwise}
-    \Phi_W(T(\mathbf{v})) = \mathbf{A} \, \Phi_V(\mathbf{v}).
-  \end{equation}
-
-  The matrix $\mathbf{A}$ is constructed as follows: write each $T(\mathbf{v}_j)$ as a linear combination
+  \textbf{How to construct $\mathbf{A}$}: Apply $T$ to each basis vector $\mathbf{v}_j$ and write the result in the basis $\mathcal{B}_W$:
   \begin{equation}\label{eq:matrix-columns}
     T(\mathbf{v}_j) = \sum_{i=1}^{m} a_{ij} \mathbf{w}_i.
   \end{equation}
@@ -238,32 +308,63 @@ with $\dim(V) = n$ and $\dim(W) = m$.
   \end{itemize}
 \end{remark}
 
+\begin{remark}[Applications: Why every linear map is a matrix]
+  This fundamental theorem bridges abstract mathematics and computation:
+  \begin{itemize}
+    \item \textbf{Machine learning}: Neural network layers are linear transformations between high-dimensional feature spaces. The theorem guarantees that choosing a basis (e.g., pixel coordinates, word embeddings) allows us to represent these transformations as matrix multiplications, enabling GPU-accelerated training.
+
+    \item \textbf{Computer graphics}: Transformations like rotations, scaling, and projections act on infinite-dimensional function spaces (continuous surfaces). By discretizing to vertices and choosing a basis, the theorem shows these become finite matrix operations that GPUs can execute in real-time.
+
+    \item \textbf{Quantum computing}: Quantum gates are unitary operators on infinite-dimensional Hilbert spaces. The theorem ensures that restricting to finite-dimensional qubit spaces gives matrix representations, making quantum circuits implementable on physical hardware.
+
+    \item \textbf{Differential equations}: Linear differential operators (like $\frac{d}{dx}$) act on infinite-dimensional function spaces. Choosing a basis (Fourier modes, finite elements) converts them to matrices, enabling numerical solution methods.
+
+    \item \textbf{Theoretical physics}: Symmetries of physical systems are represented by abstract group actions. The theorem shows that these symmetries have matrix representations, connecting abstract symmetry principles to concrete calculations in quantum field theory and particle physics.
+  \end{itemize}
+  \textbf{Key insight}: The theorem shows that \emph{choosing coordinates is the bridge between abstract theory and practical computation}. Different bases give different matrix representations, but all encode the same underlying linear transformation.
+\end{remark}
+
+\begin{example}[Differentiation of polynomials]
+  Let $V = \mathbb{P}_2$ be the space of polynomials of degree $\leq 2$, and let $W = \mathbb{P}_1$ be polynomials of degree $\leq 1$.
+  Define $T : V \to W$ by $T(p) = p'$ (differentiation).
+
+  Choose bases $\mathcal{B}_V = (1, x, x^2)$ for $V$ and $\mathcal{B}_W = (1, x)$ for $W$.
+
+  \textbf{Step 1}: Apply $T$ to each basis vector of $V$:
+  \begin{align*}
+    T(1)   & = 0 = 0 \cdot 1 + 0 \cdot x,  \\
+    T(x)   & = 1 = 1 \cdot 1 + 0 \cdot x,  \\
+    T(x^2) & = 2x = 0 \cdot 1 + 2 \cdot x.
+  \end{align*}
+
+  \textbf{Step 2}: Read off the columns. The matrix representation is
+  \[
+    \mathbf{A} = \begin{pmatrix} 0 & 1 & 0 \\ 0 & 0 & 2 \end{pmatrix}.
+  \]
+
+  \textbf{Verification}: Consider $p(x) = 3 + 5x + 7x^2$. In coordinates: $\Phi_V(p) = (3, 5, 7)^{\mathsf{T}}$.
+  Then
+  \[
+    \mathbf{A} \Phi_V(p) = \begin{pmatrix} 0 & 1 & 0 \\ 0 & 0 & 2 \end{pmatrix} \begin{pmatrix} 3 \\ 5 \\ 7 \end{pmatrix} = \begin{pmatrix} 5 \\ 14 \end{pmatrix}.
+  \]
+  This represents $5 + 14x$, which is indeed $p'(x) = 5 + 14x$.
+\end{example}
+
 \begin{remark}
   We sometimes write $[T]_{\mathcal{B}_W,\mathcal{B}_V} = \mathbf{A}$ to denote the matrix representation of $T$ with respect to the given bases.
   When $V = W$ and both bases are the same $\mathcal{B}$, we write $[T]_{\mathcal{B}}$.
 \end{remark}
 
 \begin{corollary}[The case of $\mathbb{F}^n$]
-  Let $T : \mathbb{F}^n \to \mathbb{F}^m$ be a linear map.
-  Using the standard basis $\mathcal{E} = (\mathbf{e}_1,\dots,\mathbf{e}_n)$, the coordinate map is the identity: $\Phi_{\mathcal{E}}(\mathbf{x}) = \mathbf{x}$.
-  Therefore, for all $\mathbf{x} \in \mathbb{F}^n$,
+  When working in $\mathbb{F}^n$ with the standard basis $\mathcal{E} = (\mathbf{e}_1,\dots,\mathbf{e}_n)$,
+  the coordinate map is the identity ($\Phi_{\mathcal{E}}(\mathbf{x}) = \mathbf{x}$).
+  Therefore, for any linear map $T : \mathbb{F}^n \to \mathbb{F}^m$,
   \begin{equation}
     T(\mathbf{x}) = \mathbf{A}\mathbf{x},
   \end{equation}
   where $\mathbf{A} \in \mathbb{F}^{m \times n}$ has $j$-th column $\mathbf{A}_{:,j} = T(\mathbf{e}_j)$.
+  In this case, the linear map $T$ and its matrix $\mathbf{A}$ are identified.
 \end{corollary}
-
-\begin{proof}
-  For the standard basis, $\Phi_{\mathcal{E}}$ is the identity map since every $\mathbf{x} \in \mathbb{F}^n$ is already written
-  as its coordinate vector. The commutative diagram becomes
-  \[
-    \begin{tikzcd}[row sep=large, column sep=large]
-      \mathbb{F}^n \arrow[r, "T"] \arrow[d, "\text{id}"'] & \mathbb{F}^m \arrow[d, "\text{id}"] \\
-      \mathbb{F}^n \arrow[r, "\mathbf{A}"'] & \mathbb{F}^m
-    \end{tikzcd}
-  \]
-  which immediately gives $T = \mathbf{A}$ (as maps).
-\end{proof}
 
 \subsection{Subspaces of $\mathbb{R}^d$}
 
@@ -297,3 +398,477 @@ we have the following useful characterization.
   In particular, the columns are linearly independent, so $S = \operatorname{span}(\mathbf{w}_1,\dots,\mathbf{w}_k) = \{\mathbf{W}\mathbf{z} : \mathbf{z} \in \mathbb{R}^k\}$
   is a $k$-dimensional subspace of $\mathbb{R}^d$.
 \end{proof}
+
+\section{Eigenvalues and Eigenvectors}
+
+\begin{definition}[Eigenvalue and eigenvector]
+  Let $T : V \to V$ be a linear operator on a vector space $V$ over $\mathbb{F}$.
+  A scalar $\lambda \in \mathbb{F}$ is an \emph{eigenvalue} of $T$ if there exists a nonzero vector $\mathbf{v} \in V$ such that
+  \begin{equation}
+    T(\mathbf{v}) = \lambda \mathbf{v}.
+  \end{equation}
+  The vector $\mathbf{v}$ is called an \emph{eigenvector} corresponding to $\lambda$.
+\end{definition}
+
+\begin{remark}
+  For matrices $\mathbf{A} \in \mathbb{F}^{n \times n}$, the eigenvalue equation becomes $\mathbf{A}\mathbf{v} = \lambda \mathbf{v}$.
+  Equivalently, $(\mathbf{A} - \lambda \mathbf{I})\mathbf{v} = \mathbf{0}$, so $\lambda$ is an eigenvalue if and only if
+  $\det(\mathbf{A} - \lambda \mathbf{I}) = 0$.
+\end{remark}
+
+\begin{definition}[Symmetric matrix]
+  A matrix $\mathbf{A} \in \mathbb{R}^{n \times n}$ is \emph{symmetric} if $\mathbf{A}^{\mathsf{T}} = \mathbf{A}$.
+\end{definition}
+
+\begin{definition}[Definiteness of symmetric matrices]\label{def:definiteness}
+  Let $\mathbf{A} \in \mathbb{R}^{n \times n}$ be a symmetric matrix. We classify $\mathbf{A}$ based on the sign of the quadratic form $\mathbf{x}^{\mathsf{T}}\mathbf{A}\mathbf{x}$:
+  \begin{enumerate}
+    \item $\mathbf{A}$ is \emph{positive definite} if $\mathbf{x}^{\mathsf{T}}\mathbf{A}\mathbf{x} > 0$ for all $\mathbf{x} \neq \mathbf{0}$.
+    \item $\mathbf{A}$ is \emph{positive semidefinite} if $\mathbf{x}^{\mathsf{T}}\mathbf{A}\mathbf{x} \geq 0$ for all $\mathbf{x} \in \mathbb{R}^n$.
+    \item $\mathbf{A}$ is \emph{negative definite} if $\mathbf{x}^{\mathsf{T}}\mathbf{A}\mathbf{x} < 0$ for all $\mathbf{x} \neq \mathbf{0}$.
+    \item $\mathbf{A}$ is \emph{negative semidefinite} if $\mathbf{x}^{\mathsf{T}}\mathbf{A}\mathbf{x} \leq 0$ for all $\mathbf{x} \in \mathbb{R}^n$.
+    \item $\mathbf{A}$ is \emph{indefinite} if $\mathbf{x}^{\mathsf{T}}\mathbf{A}\mathbf{x}$ takes both positive and negative values.
+  \end{enumerate}
+\end{definition}
+
+\begin{remark}
+  For a symmetric matrix $\mathbf{A}$ with eigenvalues $\lambda_1,\dots,\lambda_n$:
+  \begin{itemize}
+    \item $\mathbf{A}$ is positive definite $\Leftrightarrow$ all $\lambda_i > 0$.
+    \item $\mathbf{A}$ is positive semidefinite $\Leftrightarrow$ all $\lambda_i \geq 0$.
+    \item $\mathbf{A}$ is negative definite $\Leftrightarrow$ all $\lambda_i < 0$.
+    \item $\mathbf{A}$ is negative semidefinite $\Leftrightarrow$ all $\lambda_i \leq 0$.
+    \item $\mathbf{A}$ is indefinite $\Leftrightarrow$ $\mathbf{A}$ has both positive and negative eigenvalues.
+  \end{itemize}
+  This characterization follows from the spectral theorem: if $\mathbf{A} = \mathbf{U}\mathbf{\Lambda}\mathbf{U}^{\mathsf{T}}$ with $\mathbf{U}$ orthogonal, then
+  \[
+    \mathbf{x}^{\mathsf{T}}\mathbf{A}\mathbf{x} = \mathbf{x}^{\mathsf{T}}\mathbf{U}\mathbf{\Lambda}\mathbf{U}^{\mathsf{T}}\mathbf{x} = \sum_{i=1}^{n} \lambda_i (\mathbf{u}_i^{\mathsf{T}}\mathbf{x})^2,
+  \]
+  where $\mathbf{u}_i$ are the columns of $\mathbf{U}$.
+\end{remark}
+
+\begin{lemma}[Eigenvalues of symmetric matrices are real]\label{lem:symmetric-real-eigenvalues}
+  Let $\mathbf{A} \in \mathbb{R}^{n \times n}$ be symmetric. Then all eigenvalues of $\mathbf{A}$ are real,
+  and we can choose corresponding eigenvectors to be real.
+\end{lemma}
+
+\begin{proof}
+  Let $\lambda$ be an eigenvalue with eigenvector $\mathbf{v} \in \mathbb{C}^n$ (allowing complex vectors).
+  Then $\mathbf{A}\mathbf{v} = \lambda \mathbf{v}$ with $\mathbf{v} \neq \mathbf{0}$.
+
+  Taking the conjugate transpose of both sides: $\overline{\mathbf{v}}^{\mathsf{T}} \mathbf{A}^{\mathsf{T}} = \overline{\lambda} \overline{\mathbf{v}}^{\mathsf{T}}$.
+  Since $\mathbf{A}$ is real and symmetric, $\mathbf{A}^{\mathsf{T}} = \mathbf{A}$, so $\overline{\mathbf{v}}^{\mathsf{T}} \mathbf{A} = \overline{\lambda} \overline{\mathbf{v}}^{\mathsf{T}}$.
+
+  Now multiply the original equation on the left by $\overline{\mathbf{v}}^{\mathsf{T}}$:
+  \[
+    \overline{\mathbf{v}}^{\mathsf{T}} \mathbf{A} \mathbf{v} = \lambda \overline{\mathbf{v}}^{\mathsf{T}} \mathbf{v}.
+  \]
+  And multiply the conjugated equation on the right by $\mathbf{v}$:
+  \[
+    \overline{\mathbf{v}}^{\mathsf{T}} \mathbf{A} \mathbf{v} = \overline{\lambda} \overline{\mathbf{v}}^{\mathsf{T}} \mathbf{v}.
+  \]
+  Since both equal $\overline{\mathbf{v}}^{\mathsf{T}} \mathbf{A} \mathbf{v}$ and $\overline{\mathbf{v}}^{\mathsf{T}} \mathbf{v} = \|\mathbf{v}\|^2 > 0$,
+  we have $\lambda = \overline{\lambda}$, so $\lambda \in \mathbb{R}$.
+
+  For a real eigenvalue, we can find a real eigenvector by taking the real or imaginary part of a complex eigenvector.
+\end{proof}
+
+\begin{lemma}[Eigenvectors for distinct eigenvalues are orthogonal]\label{lem:distinct-eigenvalues-orthogonal}
+  Let $\mathbf{A} \in \mathbb{R}^{n \times n}$ be symmetric. If $\mathbf{v}_1, \mathbf{v}_2$ are eigenvectors with distinct eigenvalues
+  $\lambda_1 \neq \lambda_2$, then $\mathbf{v}_1 \perp \mathbf{v}_2$.
+\end{lemma}
+
+\begin{proof}
+  We have $\mathbf{A}\mathbf{v}_1 = \lambda_1 \mathbf{v}_1$ and $\mathbf{A}\mathbf{v}_2 = \lambda_2 \mathbf{v}_2$. Then
+  \begin{align*}
+    \lambda_1 \langle \mathbf{v}_1, \mathbf{v}_2 \rangle
+     & = \langle \lambda_1 \mathbf{v}_1, \mathbf{v}_2 \rangle = \langle \mathbf{A}\mathbf{v}_1, \mathbf{v}_2 \rangle                                                       \\
+     & = \mathbf{v}_1^{\mathsf{T}} \mathbf{A}^{\mathsf{T}} \mathbf{v}_2 = \mathbf{v}_1^{\mathsf{T}} \mathbf{A} \mathbf{v}_2 \quad \text{(since $\mathbf{A}$ is symmetric)} \\
+     & = \mathbf{v}_1^{\mathsf{T}} (\lambda_2 \mathbf{v}_2) = \lambda_2 \langle \mathbf{v}_1, \mathbf{v}_2 \rangle.
+  \end{align*}
+  Therefore, $(\lambda_1 - \lambda_2) \langle \mathbf{v}_1, \mathbf{v}_2 \rangle = 0$.
+  Since $\lambda_1 \neq \lambda_2$, we must have $\langle \mathbf{v}_1, \mathbf{v}_2 \rangle = 0$.
+\end{proof}
+
+\begin{theorem}[Spectral theorem for symmetric matrices]\label{thm:spectral}
+  Let $\mathbf{A} \in \mathbb{R}^{n \times n}$ be a symmetric matrix. Then there exists an orthonormal basis of $\mathbb{R}^n$
+  consisting of eigenvectors of $\mathbf{A}$. Moreover, we can write
+  \begin{equation}
+    \mathbf{A} = \mathbf{U}\mathbf{\Lambda}\mathbf{U}^{\mathsf{T}},
+  \end{equation}
+  where $\mathbf{U} \in \mathbb{R}^{n \times n}$ is orthogonal ($\mathbf{U}^{\mathsf{T}}\mathbf{U} = \mathbf{I}$) with columns being orthonormal eigenvectors,
+  and $\mathbf{\Lambda} = \operatorname{diag}(\lambda_1,\dots,\lambda_n)$ contains the corresponding eigenvalues.
+\end{theorem}
+
+\begin{proof}
+  We proceed by induction on $n$.
+
+  \textbf{Base case} ($n = 1$): Any $1 \times 1$ matrix $\mathbf{A} = [a]$ has eigenvalue $\lambda = a$ with eigenvector $\mathbf{u} = [1]$.
+
+  \textbf{Inductive step}: Assume the result holds for $(n-1) \times (n-1)$ symmetric matrices.
+  Let $\mathbf{A} \in \mathbb{R}^{n \times n}$ be symmetric.
+
+  By Lemma~\ref{lem:symmetric-real-eigenvalues}, $\mathbf{A}$ has a real eigenvalue $\lambda_1$ with real eigenvector $\mathbf{v}_1$.
+  Normalize to get $\mathbf{u}_1 = \mathbf{v}_1 / \|\mathbf{v}_1\|$ with $\|\mathbf{u}_1\| = 1$.
+
+  Extend $\{\mathbf{u}_1\}$ to an orthonormal basis $\{\mathbf{u}_1, \mathbf{w}_2, \dots, \mathbf{w}_n\}$ of $\mathbb{R}^n$
+  (using Gram-Schmidt if necessary). Let $\mathbf{Q} = [\mathbf{u}_1 \mid \mathbf{w}_2 \mid \cdots \mid \mathbf{w}_n]$ be orthogonal.
+
+  Consider $\mathbf{B} = \mathbf{Q}^{\mathsf{T}} \mathbf{A} \mathbf{Q}$. The first column of $\mathbf{A}\mathbf{Q}$ is
+  \[
+    \mathbf{A}\mathbf{u}_1 = \lambda_1 \mathbf{u}_1.
+  \]
+  So the first column of $\mathbf{Q}^{\mathsf{T}}\mathbf{A}\mathbf{Q}$ is $\mathbf{Q}^{\mathsf{T}}(\lambda_1 \mathbf{u}_1) = \lambda_1 \mathbf{e}_1$.
+
+  Since $\mathbf{B}$ is symmetric (as $\mathbf{B}^{\mathsf{T}} = (\mathbf{Q}^{\mathsf{T}}\mathbf{A}\mathbf{Q})^{\mathsf{T}} = \mathbf{Q}^{\mathsf{T}}\mathbf{A}^{\mathsf{T}}\mathbf{Q} = \mathbf{Q}^{\mathsf{T}}\mathbf{A}\mathbf{Q} = \mathbf{B}$),
+  we have
+  \[
+    \mathbf{B} = \begin{pmatrix} \lambda_1 & \mathbf{0}^{\mathsf{T}} \\ \mathbf{0} & \mathbf{B}' \end{pmatrix},
+  \]
+  where $\mathbf{B}' \in \mathbb{R}^{(n-1) \times (n-1)}$ is symmetric.
+
+  By the inductive hypothesis, $\mathbf{B}' = \mathbf{V}\mathbf{\Lambda}'\mathbf{V}^{\mathsf{T}}$ where $\mathbf{V}$ is orthogonal and $\mathbf{\Lambda}'$ is diagonal.
+
+  Let $\widetilde{\mathbf{V}} = \begin{pmatrix} 1 & \mathbf{0}^{\mathsf{T}} \\ \mathbf{0} & \mathbf{V} \end{pmatrix}$. Then $\widetilde{\mathbf{V}}$ is orthogonal and
+  \[
+    \mathbf{B} = \widetilde{\mathbf{V}} \begin{pmatrix} \lambda_1 & \mathbf{0}^{\mathsf{T}} \\ \mathbf{0} & \mathbf{\Lambda}' \end{pmatrix} \widetilde{\mathbf{V}}^{\mathsf{T}}.
+  \]
+
+  Setting $\mathbf{U} = \mathbf{Q}\widetilde{\mathbf{V}}$ (orthogonal) and $\mathbf{\Lambda} = \begin{pmatrix} \lambda_1 & \mathbf{0}^{\mathsf{T}} \\ \mathbf{0} & \mathbf{\Lambda}' \end{pmatrix}$ (diagonal), we get
+  \[
+    \mathbf{A} = \mathbf{Q} \mathbf{B} \mathbf{Q}^{\mathsf{T}} = \mathbf{Q} \widetilde{\mathbf{V}} \mathbf{\Lambda} \widetilde{\mathbf{V}}^{\mathsf{T}} \mathbf{Q}^{\mathsf{T}} = \mathbf{U} \mathbf{\Lambda} \mathbf{U}^{\mathsf{T}}.
+  \]
+  The columns of $\mathbf{U}$ form an orthonormal basis of eigenvectors.
+\end{proof}
+
+\begin{remark}
+  The spectral theorem is specific to symmetric (or more generally, self-adjoint) matrices.
+  \begin{itemize}
+    \item \textbf{What's general}: Any matrix $\mathbf{A} \in \mathbb{C}^{n \times n}$ has $n$ eigenvalues (counted with multiplicity) and can be diagonalized if and only if it has $n$ linearly independent eigenvectors.
+    \item \textbf{What's special for symmetric matrices}: Eigenvalues are real, eigenvectors are orthogonal, and diagonalization via orthogonal matrices is always possible.
+  \end{itemize}
+\end{remark}
+
+\begin{remark}[Applications of the spectral theorem]
+  The spectral theorem is one of the most important results in applied mathematics:
+  \begin{itemize}
+    \item \textbf{Machine learning}:
+          \begin{itemize}
+            \item Covariance matrices in statistics are symmetric, so the spectral theorem guarantees they can be diagonalized with real eigenvalues. This is the foundation of PCA (see next section).
+            \item Kernel methods (SVMs, kernel PCA) use symmetric kernel matrices. The spectral theorem shows that positive semidefinite kernels correspond to valid inner products in feature space.
+            \item Graph neural networks use the graph Laplacian (a symmetric matrix). Spectral decomposition reveals the graph's structure and enables spectral graph convolutions.
+          \end{itemize}
+
+    \item \textbf{Quantum mechanics}:
+          \begin{itemize}
+            \item Observable quantities (position, momentum, energy) are represented by self-adjoint operators. The spectral theorem guarantees that measurements yield real eigenvalues (the possible measurement outcomes) and that eigenstates form an orthonormal basis.
+            \item The time evolution of quantum states is computed using the spectral decomposition of the Hamiltonian: $e^{-iHt/\hbar} = \sum_n e^{-iE_n t/\hbar}|\psi_n\rangle\langle\psi_n|$.
+          \end{itemize}
+
+    \item \textbf{Physics (classical mechanics)}:
+          \begin{itemize}
+            \item The inertia tensor (describing rotational motion) is symmetric. Its eigenvectors give the principal axes of rotation, and eigenvalues give the principal moments of inertia.
+            \item Normal modes of vibrating systems (springs, molecules, bridges) are found by diagonalizing the symmetric mass-stiffness matrix. Each eigenvector is a normal mode, with frequency $\omega \propto \sqrt{\lambda}$.
+          \end{itemize}
+
+    \item \textbf{Theoretical physics}:
+          \begin{itemize}
+            \item In quantum field theory, particle propagators are computed from spectral decompositions of field operators.
+            \item The stress-energy tensor in general relativity is symmetric, and its eigenvalues represent energy densities measured by observers moving along the eigenvector directions.
+          \end{itemize}
+
+    \item \textbf{Numerical analysis}: Matrix functions like $e^{\mathbf{A}}$, $\sqrt{\mathbf{A}}$, or $\mathbf{A}^{-1}$ are computed efficiently using spectral decomposition: if $\mathbf{A} = \mathbf{U}\mathbf{\Lambda}\mathbf{U}^{\mathsf{T}}$, then $f(\mathbf{A}) = \mathbf{U}f(\mathbf{\Lambda})\mathbf{U}^{\mathsf{T}}$ where $f(\mathbf{\Lambda})$ is diagonal.
+  \end{itemize}
+  \textbf{Key insight}: Symmetric matrices represent physical quantities and statistical relationships. The spectral theorem shows these can be understood through their eigenvalues (magnitudes) and eigenvectors (principal directions).
+\end{remark}
+
+\section{Principal Component Analysis}
+
+\subsection{The Geometric Problem}
+
+Principal Component Analysis (PCA) solves a fundamental geometric problem: given data points in high-dimensional space, find the best low-dimensional linear subspace that approximates them.
+
+\textbf{The problem}: Given data points $\mathbf{x}_1,\dots,\mathbf{x}_N \in \mathbb{R}^d$ (assumed centered: $\sum_{i=1}^{N}\mathbf{x}_i = \mathbf{0}$), find a $k$-dimensional linear subspace $S \subseteq \mathbb{R}^d$ that minimizes the total squared distance from all points to $S$:
+\begin{equation}\label{eq:pca-geometric}
+  \min_{\substack{S \subseteq \mathbb{R}^d \\ \dim(S) = k}} \sum_{i=1}^{N} \operatorname{dist}(\mathbf{x}_i, S)^2,
+\end{equation}
+where $\operatorname{dist}(\mathbf{x}, S) := \inf_{\mathbf{y} \in S} \|\mathbf{x} - \mathbf{y}\|_2$ is the distance from $\mathbf{x}$ to $S$.
+
+\subsection{Parametrizing Subspaces via Orthonormal Bases}
+
+To solve \eqref{eq:pca-geometric}, we need to parametrize $k$-dimensional subspaces. The key is to represent each subspace by an orthonormal basis.
+
+\begin{lemma}[Orthonormal basis representation]\label{lem:subspace-parametrization}
+  Let $S \subseteq \mathbb{R}^d$ be a $k$-dimensional linear subspace. Then there exists a matrix $\mathbf{W} \in \mathbb{R}^{d \times k}$ with columns $\mathbf{w}_1,\dots,\mathbf{w}_k$ such that:
+  \begin{enumerate}
+    \item The columns of $\mathbf{W}$ form an orthonormal basis of $S$: $\mathbf{W}^{\mathsf{T}}\mathbf{W} = \mathbf{I}_k$.
+    \item $S = \operatorname{span}(\mathbf{w}_1,\dots,\mathbf{w}_k) = \{\mathbf{W}\mathbf{z} : \mathbf{z} \in \mathbb{R}^k\}$.
+  \end{enumerate}
+  Conversely, any $\mathbf{W} \in \mathbb{R}^{d \times k}$ with $\mathbf{W}^{\mathsf{T}}\mathbf{W} = \mathbf{I}_k$ defines a $k$-dimensional subspace $S = \operatorname{span}(\mathbf{w}_1,\dots,\mathbf{w}_k)$.
+\end{lemma}
+
+\begin{proof}
+  Pick any basis of $S$ and apply Gram--Schmidt to obtain orthonormal vectors $\mathbf{w}_1,\dots,\mathbf{w}_k \in \mathbb{R}^d$.
+  Let $\mathbf{W} = [\mathbf{w}_1 \mid \cdots \mid \mathbf{w}_k]$. Then $\mathbf{W}^{\mathsf{T}}\mathbf{W} = \mathbf{I}_k$ and $\operatorname{span}(\mathbf{w}_1,\dots,\mathbf{w}_k) = S$.
+  Conversely, if $\mathbf{W}^{\mathsf{T}}\mathbf{W} = \mathbf{I}_k$, the columns are orthonormal, hence linearly independent, so the span has dimension $k$.
+\end{proof}
+
+Thus we can optimize over matrices $\mathbf{W} \in \mathbb{R}^{d \times k}$ with $\mathbf{W}^{\mathsf{T}}\mathbf{W} = \mathbf{I}_k$ instead of over abstract subspaces.
+
+\subsection{Distance to a Subspace and Projection}
+
+\begin{lemma}[Projection formula]\label{lem:projection-formula}
+  Let $\mathbf{W} \in \mathbb{R}^{d \times k}$ with columns $\mathbf{w}_1,\dots,\mathbf{w}_k$ satisfying $\mathbf{W}^{\mathsf{T}}\mathbf{W} = \mathbf{I}_k$, and let $S = \operatorname{span}(\mathbf{w}_1,\dots,\mathbf{w}_k)$.
+  For $\mathbf{x} \in \mathbb{R}^d$, the point in $S$ closest to $\mathbf{x}$ is
+  \begin{equation}\label{eq:projection}
+    \widehat{\mathbf{x}} = \mathbf{W}\mathbf{W}^{\mathsf{T}}\mathbf{x} \in \mathbb{R}^d,
+  \end{equation}
+  and the squared distance is
+  \begin{equation}
+    \operatorname{dist}(\mathbf{x}, S)^2 = \|\mathbf{x} - \mathbf{W}\mathbf{W}^{\mathsf{T}}\mathbf{x}\|^2.
+  \end{equation}
+\end{lemma}
+
+\begin{proof}
+  The distance to $S$ is
+  \[
+    \operatorname{dist}(\mathbf{x}, S) = \inf_{\mathbf{y} \in S} \|\mathbf{x} - \mathbf{y}\| = \inf_{\mathbf{z} \in \mathbb{R}^k} \|\mathbf{x} - \mathbf{W}\mathbf{z}\|,
+  \]
+  since every $\mathbf{y} \in S$ can be written as $\mathbf{W}\mathbf{z}$ for some $\mathbf{z} \in \mathbb{R}^k$.
+
+  Define $f(\mathbf{z}) = \|\mathbf{x} - \mathbf{W}\mathbf{z}\|^2 = (\mathbf{x} - \mathbf{W}\mathbf{z})^{\mathsf{T}}(\mathbf{x} - \mathbf{W}\mathbf{z})$. Expanding:
+  \[
+    f(\mathbf{z}) = \mathbf{x}^{\mathsf{T}}\mathbf{x} - 2\mathbf{x}^{\mathsf{T}}\mathbf{W}\mathbf{z} + \mathbf{z}^{\mathsf{T}}\mathbf{W}^{\mathsf{T}}\mathbf{W}\mathbf{z}.
+  \]
+  Using $\mathbf{W}^{\mathsf{T}}\mathbf{W} = \mathbf{I}_k$:
+  \[
+    f(\mathbf{z}) = \mathbf{x}^{\mathsf{T}}\mathbf{x} - 2\mathbf{x}^{\mathsf{T}}\mathbf{W}\mathbf{z} + \mathbf{z}^{\mathsf{T}}\mathbf{z}.
+  \]
+  Taking the gradient: $\nabla_{\mathbf{z}} f = -2\mathbf{W}^{\mathsf{T}}\mathbf{x} + 2\mathbf{z}$. Setting to zero gives $\mathbf{z}^* = \mathbf{W}^{\mathsf{T}}\mathbf{x}$.
+  The Hessian is $2\mathbf{I}_k$, which is positive definite, so this is the unique global minimizer.
+
+  Thus $\widehat{\mathbf{x}} = \mathbf{W}\mathbf{z}^* = \mathbf{W}\mathbf{W}^{\mathsf{T}}\mathbf{x}$, and
+  \[
+    \operatorname{dist}(\mathbf{x}, S)^2 = \|\mathbf{x} - \mathbf{W}\mathbf{W}^{\mathsf{T}}\mathbf{x}\|^2.
+  \]
+\end{proof}
+
+\begin{remark}
+  The matrix $\mathbf{P} = \mathbf{W}\mathbf{W}^{\mathsf{T}} \in \mathbb{R}^{d \times d}$ is the orthogonal projection onto $S$. It is symmetric, idempotent ($\mathbf{P}^2 = \mathbf{P}$), and has rank $k$.
+  The coordinate vector of $\widehat{\mathbf{x}}$ in the basis given by columns of $\mathbf{W}$ is $\mathbf{z}^* = \mathbf{W}^{\mathsf{T}}\mathbf{x} \in \mathbb{R}^k$.
+\end{remark}
+
+\subsection{The Matrix Optimization Problem}
+
+\begin{definition}[Sample covariance matrix]
+  Given centered data $\mathbf{x}_1,\dots,\mathbf{x}_N \in \mathbb{R}^d$, the \emph{sample covariance matrix} is
+  \begin{equation}
+    \mathbf{C} = \frac{1}{N} \sum_{i=1}^{N} \mathbf{x}_i \mathbf{x}_i^{\mathsf{T}} \in \mathbb{R}^{d \times d}.
+  \end{equation}
+  It is symmetric and positive semidefinite.
+\end{definition}
+
+\begin{theorem}[PCA solution]\label{thm:pca}
+  Let $\mathbf{x}_1,\dots,\mathbf{x}_N \in \mathbb{R}^d$ be centered data with covariance matrix $\mathbf{C}$.
+  Let $\mathbf{C} = \mathbf{U}\mathbf{\Lambda}\mathbf{U}^{\mathsf{T}}$ be the spectral decomposition with eigenvalues $\lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_d \geq 0$ and corresponding eigenvectors $\mathbf{u}_1,\dots,\mathbf{u}_d$.
+
+  The geometric optimization problem \eqref{eq:pca-geometric} is equivalent to:
+  \begin{equation}\label{eq:pca-trace}
+    \min_{\substack{\mathbf{W} \in \mathbb{R}^{d \times k} \\ \mathbf{W}^{\mathsf{T}}\mathbf{W} = \mathbf{I}_k}} \sum_{i=1}^{N} \|\mathbf{x}_i - \mathbf{W}\mathbf{W}^{\mathsf{T}}\mathbf{x}_i\|^2 \quad \Leftrightarrow \quad \max_{\substack{\mathbf{W} \in \mathbb{R}^{d \times k} \\ \mathbf{W}^{\mathsf{T}}\mathbf{W} = \mathbf{I}_k}} \operatorname{tr}(\mathbf{W}^{\mathsf{T}}\mathbf{C}\mathbf{W}).
+  \end{equation}
+
+  \textbf{Solution}: The optimal subspace is $S^* = \operatorname{span}(\mathbf{u}_1,\dots,\mathbf{u}_k)$, spanned by the top $k$ eigenvectors of $\mathbf{C}$.
+  Any optimal $\mathbf{W}^*$ has the form
+  \begin{equation}
+    \mathbf{W}^* = [\mathbf{u}_1 \mid \cdots \mid \mathbf{u}_k] \mathbf{R},
+  \end{equation}
+  where $\mathbf{R} \in \mathbb{R}^{k \times k}$ is any orthogonal matrix. The minimum reconstruction error is
+  \begin{equation}
+    \sum_{i=1}^{N} \operatorname{dist}(\mathbf{x}_i, S^*)^2 = N \sum_{j=k+1}^{d} \lambda_j.
+  \end{equation}
+\end{theorem}
+
+\begin{proof}
+  \textbf{Step 1: From geometric problem to Frobenius norm.}
+
+  By Lemma~\ref{lem:projection-formula}, for $S = \operatorname{span}(\mathbf{w}_1,\dots,\mathbf{w}_k)$ where $\mathbf{W} = [\mathbf{w}_1 \mid \cdots \mid \mathbf{w}_k]$ we have
+  \[
+    \sum_{i=1}^{N} \operatorname{dist}(\mathbf{x}_i, S)^2 = \sum_{i=1}^{N} \|\mathbf{x}_i - \mathbf{W}\mathbf{W}^{\mathsf{T}}\mathbf{x}_i\|^2.
+  \]
+
+  Let $\mathbf{X} \in \mathbb{R}^{N \times d}$ be the data matrix with rows $\mathbf{x}_i^{\mathsf{T}}$. Then
+  \[
+    \sum_{i=1}^{N} \|\mathbf{x}_i - \mathbf{W}\mathbf{W}^{\mathsf{T}}\mathbf{x}_i\|^2 = \|\mathbf{X} - \mathbf{X}\mathbf{W}\mathbf{W}^{\mathsf{T}}\|_F^2,
+  \]
+  where $\|\cdot\|_F$ is the Frobenius norm.
+
+  \textbf{Step 2: Converting to trace maximization.}
+
+  Expand the Frobenius norm using $\|\mathbf{A}\|_F^2 = \operatorname{tr}(\mathbf{A}^{\mathsf{T}}\mathbf{A})$:
+  \begin{align*}
+    \|\mathbf{X} - \mathbf{X}\mathbf{W}\mathbf{W}^{\mathsf{T}}\|_F^2
+     & = \operatorname{tr}\left((\mathbf{X} - \mathbf{X}\mathbf{W}\mathbf{W}^{\mathsf{T}})^{\mathsf{T}}(\mathbf{X} - \mathbf{X}\mathbf{W}\mathbf{W}^{\mathsf{T}})\right)                                                                                                                                                                                                \\
+     & = \operatorname{tr}(\mathbf{X}^{\mathsf{T}}\mathbf{X}) - \operatorname{tr}(\mathbf{X}^{\mathsf{T}}\mathbf{X}\mathbf{W}\mathbf{W}^{\mathsf{T}}) - \operatorname{tr}(\mathbf{W}\mathbf{W}^{\mathsf{T}}\mathbf{X}^{\mathsf{T}}\mathbf{X}) + \operatorname{tr}(\mathbf{W}\mathbf{W}^{\mathsf{T}}\mathbf{X}^{\mathsf{T}}\mathbf{X}\mathbf{W}\mathbf{W}^{\mathsf{T}}).
+  \end{align*}
+
+  Using the cyclic property of trace, $\operatorname{tr}(\mathbf{A}\mathbf{B}\mathbf{C}) = \operatorname{tr}(\mathbf{C}\mathbf{A}\mathbf{B})$:
+  \begin{align*}
+    \operatorname{tr}(\mathbf{X}^{\mathsf{T}}\mathbf{X}\mathbf{W}\mathbf{W}^{\mathsf{T}})                                  & = \operatorname{tr}(\mathbf{W}^{\mathsf{T}}\mathbf{X}^{\mathsf{T}}\mathbf{X}\mathbf{W}),                                                                                                                                 \\
+    \operatorname{tr}(\mathbf{W}\mathbf{W}^{\mathsf{T}}\mathbf{X}^{\mathsf{T}}\mathbf{X})                                  & = \operatorname{tr}(\mathbf{W}^{\mathsf{T}}\mathbf{X}^{\mathsf{T}}\mathbf{X}\mathbf{W}),                                                                                                                                 \\
+    \operatorname{tr}(\mathbf{W}\mathbf{W}^{\mathsf{T}}\mathbf{X}^{\mathsf{T}}\mathbf{X}\mathbf{W}\mathbf{W}^{\mathsf{T}}) & = \operatorname{tr}(\mathbf{W}^{\mathsf{T}}\mathbf{X}^{\mathsf{T}}\mathbf{X}\mathbf{W} \cdot \mathbf{W}^{\mathsf{T}}\mathbf{W}) = \operatorname{tr}(\mathbf{W}^{\mathsf{T}}\mathbf{X}^{\mathsf{T}}\mathbf{X}\mathbf{W}),
+  \end{align*}
+  where the last equality uses $\mathbf{W}^{\mathsf{T}}\mathbf{W} = \mathbf{I}_k$. Thus:
+  \[
+    \|\mathbf{X} - \mathbf{X}\mathbf{W}\mathbf{W}^{\mathsf{T}}\|_F^2 = \operatorname{tr}(\mathbf{X}^{\mathsf{T}}\mathbf{X}) - \operatorname{tr}(\mathbf{W}^{\mathsf{T}}\mathbf{X}^{\mathsf{T}}\mathbf{X}\mathbf{W}).
+  \]
+
+  Since $\operatorname{tr}(\mathbf{X}^{\mathsf{T}}\mathbf{X})$ is constant, minimizing reconstruction error is equivalent to maximizing $\operatorname{tr}(\mathbf{W}^{\mathsf{T}}\mathbf{X}^{\mathsf{T}}\mathbf{X}\mathbf{W})$.
+  Define $\mathbf{C} = \frac{1}{N}\mathbf{X}^{\mathsf{T}}\mathbf{X}$. Then \eqref{eq:pca-geometric} becomes:
+  \[
+    \max_{\substack{\mathbf{W} \in \mathbb{R}^{d \times k} \\ \mathbf{W}^{\mathsf{T}}\mathbf{W} = \mathbf{I}_k}} \operatorname{tr}(\mathbf{W}^{\mathsf{T}}\mathbf{C}\mathbf{W}).
+  \]
+
+  \textbf{Step 3: Change of variables to eigenvector basis.}
+
+  By the spectral theorem, $\mathbf{C} = \mathbf{U}\mathbf{\Lambda}\mathbf{U}^{\mathsf{T}}$ with $\mathbf{U}^{\mathsf{T}}\mathbf{U} = \mathbf{I}_d$ and $\mathbf{\Lambda} = \operatorname{diag}(\lambda_1,\dots,\lambda_d)$, $\lambda_1 \geq \cdots \geq \lambda_d \geq 0$.
+
+  Define $\mathbf{S} := \mathbf{U}^{\mathsf{T}}\mathbf{W} \in \mathbb{R}^{d \times k}$. Since $\mathbf{U}$ is orthogonal, $\mathbf{S}^{\mathsf{T}}\mathbf{S} = \mathbf{W}^{\mathsf{T}}\mathbf{U}\mathbf{U}^{\mathsf{T}}\mathbf{W} = \mathbf{I}_k$.
+  Moreover,
+  \[
+    \operatorname{tr}(\mathbf{W}^{\mathsf{T}}\mathbf{C}\mathbf{W}) = \operatorname{tr}(\mathbf{W}^{\mathsf{T}}\mathbf{U}\mathbf{\Lambda}\mathbf{U}^{\mathsf{T}}\mathbf{W}) = \operatorname{tr}(\mathbf{S}^{\mathsf{T}}\mathbf{\Lambda}\mathbf{S}) = \sum_{i=1}^{d} \lambda_i \sum_{j=1}^{k} s_{ij}^2.
+  \]
+
+  \textbf{Step 4: Optimization over $\mathbf{S}$.}
+
+  The constraint $\mathbf{S}^{\mathsf{T}}\mathbf{S} = \mathbf{I}_k$ implies $\sum_{i=1}^{d} s_{ij}^2 = 1$ for each column $j$, hence $\sum_{i=1}^{d} \sum_{j=1}^{k} s_{ij}^2 = k$.
+
+  Define $\alpha_i := \sum_{j=1}^{k} s_{ij}^2 \in [0, k]$, the total squared mass in row $i$. Then $\sum_{i=1}^{d} \alpha_i = k$ and
+  \[
+    \operatorname{tr}(\mathbf{S}^{\mathsf{T}}\mathbf{\Lambda}\mathbf{S}) = \sum_{i=1}^{d} \lambda_i \alpha_i.
+  \]
+
+  \textbf{Claim}: Under $\lambda_1 \geq \cdots \geq \lambda_d$ and $\alpha_i \geq 0$, $\sum \alpha_i = k$, we have $\sum_{i=1}^{d} \lambda_i \alpha_i \leq \sum_{i=1}^{k} \lambda_i$, with equality if and only if $\alpha_i = 1$ for $i \leq k$ and $\alpha_i = 0$ for $i > k$.
+
+  \textit{Proof of claim}: If there exist $i \leq k < j$ with $\alpha_i < 1$ and $\alpha_j > 0$, define $\widetilde{\alpha}_i = \alpha_i + \epsilon$, $\widetilde{\alpha}_j = \alpha_j - \epsilon$ for small $\epsilon > 0$. Then
+  \[
+    \sum_{\ell} \lambda_{\ell} \widetilde{\alpha}_{\ell} = \sum_{\ell} \lambda_{\ell} \alpha_{\ell} + \epsilon(\lambda_i - \lambda_j) \geq \sum_{\ell} \lambda_{\ell} \alpha_{\ell},
+  \]
+  with strict inequality if $\lambda_i > \lambda_j$. Repeating this argument shows the maximum is $\sum_{i=1}^{k} \lambda_i$. \qed
+
+  One feasible $\mathbf{S}$ achieving this is $\mathbf{S} = \begin{pmatrix} \mathbf{I}_k \\ \mathbf{0} \end{pmatrix}$, which gives $\mathbf{W} = \mathbf{U}\mathbf{S} = [\mathbf{u}_1 \mid \cdots \mid \mathbf{u}_k]$.
+
+  Any other optimal $\mathbf{W}^*$ satisfies $\mathbf{U}^{\mathsf{T}}\mathbf{W}^* = \mathbf{S}'$ with the same structure, i.e., $\mathbf{S}' = \begin{pmatrix} \mathbf{R} \\ \mathbf{0} \end{pmatrix}$ for some orthogonal $\mathbf{R} \in \mathbb{R}^{k \times k}$, giving $\mathbf{W}^* = [\mathbf{u}_1 \mid \cdots \mid \mathbf{u}_k]\mathbf{R}$.
+
+  The minimum reconstruction error is $\operatorname{tr}(\mathbf{X}^{\mathsf{T}}\mathbf{X}) - N \sum_{j=1}^{k}\lambda_j = N \sum_{j=k+1}^{d} \lambda_j$.
+\end{proof}
+
+\begin{remark}[Alternative proof via Lagrange multipliers]
+  We can also solve the $k=1$ case (finding the first principal component) using Lagrange multipliers, then extend to general $k$ by deflation.
+
+  \textbf{Finding the first principal component ($k=1$).}
+
+  Maximize $f(\mathbf{w}) = \mathbf{w}^{\mathsf{T}}\mathbf{C}\mathbf{w}$ subject to $g(\mathbf{w}) = \mathbf{w}^{\mathsf{T}}\mathbf{w} - 1 = 0$, where $\mathbf{w} \in \mathbb{R}^d$.
+
+  Form the Lagrangian:
+  \[
+    \mathcal{L}(\mathbf{w}, \lambda) = \mathbf{w}^{\mathsf{T}}\mathbf{C}\mathbf{w} - \lambda(\mathbf{w}^{\mathsf{T}}\mathbf{w} - 1).
+  \]
+
+  Take the gradient with respect to $\mathbf{w}$ and set to zero:
+  \[
+    \nabla_{\mathbf{w}} \mathcal{L} = 2\mathbf{C}\mathbf{w} - 2\lambda\mathbf{w} = \mathbf{0} \quad \Rightarrow \quad \mathbf{C}\mathbf{w} = \lambda\mathbf{w}.
+  \]
+
+  So $\mathbf{w}$ must be an eigenvector of $\mathbf{C}$ with eigenvalue $\lambda$. The objective value at this critical point is:
+  \[
+    f(\mathbf{w}) = \mathbf{w}^{\mathsf{T}}\mathbf{C}\mathbf{w} = \mathbf{w}^{\mathsf{T}}(\lambda\mathbf{w}) = \lambda \mathbf{w}^{\mathsf{T}}\mathbf{w} = \lambda.
+  \]
+
+  To maximize variance, choose $\mathbf{w} = \mathbf{u}_1$, the eigenvector corresponding to the largest eigenvalue $\lambda_1$.
+
+  \textbf{Finding subsequent components ($k \geq 2$).}
+
+  For the $j$-th principal component with $j > 1$, maximize $\mathbf{w}^{\mathsf{T}}\mathbf{C}\mathbf{w}$ subject to:
+  \begin{itemize}
+    \item $\mathbf{w}^{\mathsf{T}}\mathbf{w} = 1$ (unit norm),
+    \item $\mathbf{w}^{\mathsf{T}}\mathbf{u}_i = 0$ for all $i < j$ (orthogonal to previous components).
+  \end{itemize}
+
+  Form the Lagrangian with multiple constraints:
+  \[
+    \mathcal{L}(\mathbf{w}, \lambda, \mu_1,\dots,\mu_{j-1}) = \mathbf{w}^{\mathsf{T}}\mathbf{C}\mathbf{w} - \lambda(\mathbf{w}^{\mathsf{T}}\mathbf{w} - 1) - \sum_{i=1}^{j-1} \mu_i \mathbf{w}^{\mathsf{T}}\mathbf{u}_i.
+  \]
+
+  Taking the gradient:
+  \[
+    \nabla_{\mathbf{w}} \mathcal{L} = 2\mathbf{C}\mathbf{w} - 2\lambda\mathbf{w} - \sum_{i=1}^{j-1} \mu_i \mathbf{u}_i = \mathbf{0}.
+  \]
+
+  Multiply on the left by $\mathbf{u}_i^{\mathsf{T}}$ for any $i < j$:
+  \[
+    2\mathbf{u}_i^{\mathsf{T}}\mathbf{C}\mathbf{w} - 2\lambda \mathbf{u}_i^{\mathsf{T}}\mathbf{w} - \mu_i = 0.
+  \]
+  Using $\mathbf{u}_i^{\mathsf{T}}\mathbf{w} = 0$ (orthogonality constraint) and $\mathbf{C}\mathbf{u}_i = \lambda_i \mathbf{u}_i$ (since $\mathbf{u}_i$ is an eigenvector):
+  \[
+    2(\mathbf{C}\mathbf{u}_i)^{\mathsf{T}}\mathbf{w} - \mu_i = 2\lambda_i \mathbf{u}_i^{\mathsf{T}}\mathbf{w} - \mu_i = -\mu_i = 0.
+  \]
+  So $\mu_i = 0$ for all $i < j$. This reduces the stationarity condition to:
+  \[
+    \mathbf{C}\mathbf{w} = \lambda\mathbf{w}.
+  \]
+
+  Again, $\mathbf{w}$ must be an eigenvector. Combined with the orthogonality constraints $\mathbf{w}^{\mathsf{T}}\mathbf{u}_i = 0$ for $i < j$, we have $\mathbf{w} \in \operatorname{span}(\mathbf{u}_j,\mathbf{u}_{j+1},\dots,\mathbf{u}_d)$. To maximize the objective $\lambda$, choose $\mathbf{w} = \mathbf{u}_j$ with eigenvalue $\lambda_j$.
+
+  By induction, the first $k$ principal components are $\mathbf{u}_1,\dots,\mathbf{u}_k$.
+\end{remark}
+
+\begin{corollary}[PCA algorithm]
+  To perform PCA on centered data $\mathbf{x}_1,\dots,\mathbf{x}_N \in \mathbb{R}^d$:
+  \begin{enumerate}
+    \item Compute the covariance matrix $\mathbf{\Sigma} = \frac{1}{N}\sum_{i=1}^{N} \mathbf{x}_i\mathbf{x}_i^{\mathsf{T}}$.
+    \item Find the eigenvalue decomposition $\mathbf{\Sigma} = \mathbf{U}\mathbf{\Lambda}\mathbf{U}^{\mathsf{T}}$.
+    \item The principal components are the columns of $\mathbf{U}$, ordered by decreasing eigenvalue.
+    \item To project onto $k$ dimensions, use $\mathbf{W} = [\mathbf{u}_1 \mid \cdots \mid \mathbf{u}_k]$ and compute $\mathbf{z}_i = \mathbf{W}^{\mathsf{T}}\mathbf{x}_i$.
+  \end{enumerate}
+  The variance explained by the first $k$ components is $\frac{\sum_{i=1}^{k}\lambda_i}{\sum_{i=1}^{d}\lambda_i}$.
+\end{corollary}
+
+\begin{remark}[Applications of PCA]
+  PCA is one of the most widely used techniques in data science and scientific computing:
+  \begin{itemize}
+    \item \textbf{Machine learning}:
+          \begin{itemize}
+            \item \textbf{Dimensionality reduction}: Images are high-dimensional (e.g., $256 \times 256 = 65{,}536$ dimensions), but natural images lie near a low-dimensional manifold. PCA compresses images to $\sim$100 dimensions with minimal information loss, enabling faster training and visualization.
+            \item \textbf{Feature engineering}: In recommendation systems, PCA transforms sparse user-item matrices into dense low-dimensional embeddings (latent factors) that capture user preferences and item characteristics.
+            \item \textbf{Preprocessing}: Removing correlations between features via PCA whitening improves convergence of gradient-based optimization in neural networks.
+            \item \textbf{Anomaly detection}: Data points with large reconstruction error $\|\mathbf{x} - \mathbf{W}\mathbf{W}^{\mathsf{T}}\mathbf{x}\|^2$ lie far from the principal subspace, indicating outliers or anomalies.
+          \end{itemize}
+
+    \item \textbf{Computer vision}:
+          \begin{itemize}
+            \item \textbf{Eigenfaces}: PCA on face images produces "eigenfaces" (principal components). Any face can be reconstructed as a weighted sum of eigenfaces, enabling face recognition with $\sim$50 dimensions instead of millions.
+            \item \textbf{Object tracking}: Background subtraction uses PCA to model the background subspace, allowing detection of moving objects as outliers.
+          \end{itemize}
+
+    \item \textbf{Bioinformatics}:
+          \begin{itemize}
+            \item \textbf{Genomics}: Gene expression data has thousands of genes (dimensions) but few samples. PCA identifies principal axes of variation, revealing biological pathways and disease subtypes.
+            \item \textbf{Population genetics}: PCA on genetic markers separates populations by ancestry. The first two principal components often correspond to geographic coordinates, reconstructing human migration patterns.
+          \end{itemize}
+
+    \item \textbf{Physics}:
+          \begin{itemize}
+            \item \textbf{Statistical mechanics}: PCA identifies collective modes in molecular dynamics simulations, revealing slow degrees of freedom in protein folding or phase transitions.
+            \item \textbf{Climate science}: PCA on temperature/pressure fields extracts dominant patterns like El Niño or the North Atlantic Oscillation from high-dimensional spatio-temporal data.
+          \end{itemize}
+
+    \item \textbf{Theoretical physics}:
+          \begin{itemize}
+            \item \textbf{Lattice field theory}: PCA-like methods compress lattice configurations in quantum chromodynamics, identifying relevant field modes for hadron structure calculations.
+            \item \textbf{Many-body quantum systems}: Reduced density matrices are diagonalized (a PCA-like operation) to compute entanglement entropy and identify emergent degrees of freedom.
+          \end{itemize}
+
+    \item \textbf{Signal processing}: PCA separates signal from noise by projecting onto the subspace with largest variance (signal-dominated), discarding low-variance directions (noise-dominated).
+  \end{itemize}
+  \textbf{Key insight}: High-dimensional data often has low intrinsic dimensionality due to correlations. PCA finds the optimal low-dimensional representation by maximizing variance (information retention) while minimizing dimensions (computational efficiency). The spectral theorem guarantees this optimal representation exists and is computable.
+\end{remark}
