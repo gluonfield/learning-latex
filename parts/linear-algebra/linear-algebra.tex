@@ -582,6 +582,118 @@ we have the following useful characterization.
   \textbf{Key insight}: Symmetric matrices represent physical quantities and statistical relationships. The spectral theorem shows these can be understood through their eigenvalues (magnitudes) and eigenvectors (principal directions).
 \end{remark}
 
+\section{Singular Value Decomposition}
+
+The spectral theorem applies only to symmetric matrices. The Singular Value Decomposition (SVD) generalizes this to arbitrary rectangular matrices, providing orthogonal diagonalization for any matrix.
+
+\begin{theorem}[Singular Value Decomposition]\label{thm:svd}
+  Let $\mathbf{A} \in \mathbb{R}^{m \times n}$ be any matrix with rank $r = \operatorname{rank}(\mathbf{A})$. Then there exist:
+  \begin{itemize}
+    \item Orthogonal matrix $\mathbf{U} \in \mathbb{R}^{m \times m}$ with $\mathbf{U}^{\mathsf{T}}\mathbf{U} = \mathbf{I}_m$,
+    \item Orthogonal matrix $\mathbf{V} \in \mathbb{R}^{n \times n}$ with $\mathbf{V}^{\mathsf{T}}\mathbf{V} = \mathbf{I}_n$,
+    \item Diagonal matrix $\mathbf{\Sigma} \in \mathbb{R}^{m \times n}$ with diagonal entries $\sigma_1 \geq \sigma_2 \geq \cdots \geq \sigma_r > 0$ and all other entries zero,
+  \end{itemize}
+  such that
+  \begin{equation}\label{eq:svd}
+    \mathbf{A} = \mathbf{U}\mathbf{\Sigma}\mathbf{V}^{\mathsf{T}}.
+  \end{equation}
+  The values $\sigma_1,\dots,\sigma_r$ are called the \emph{singular values} of $\mathbf{A}$. The columns of $\mathbf{U}$ are the \emph{left singular vectors}, and the columns of $\mathbf{V}$ are the \emph{right singular vectors}.
+\end{theorem}
+
+\begin{proof}
+  Consider the matrix $\mathbf{A}^{\mathsf{T}}\mathbf{A} \in \mathbb{R}^{n \times n}$. This matrix is symmetric:
+  \[
+    (\mathbf{A}^{\mathsf{T}}\mathbf{A})^{\mathsf{T}} = \mathbf{A}^{\mathsf{T}}(\mathbf{A}^{\mathsf{T}})^{\mathsf{T}} = \mathbf{A}^{\mathsf{T}}\mathbf{A}.
+  \]
+  Moreover, it is positive semidefinite: for any $\mathbf{x} \in \mathbb{R}^n$,
+  \[
+    \mathbf{x}^{\mathsf{T}}(\mathbf{A}^{\mathsf{T}}\mathbf{A})\mathbf{x} = (\mathbf{A}\mathbf{x})^{\mathsf{T}}(\mathbf{A}\mathbf{x}) = \|\mathbf{A}\mathbf{x}\|^2 \geq 0.
+  \]
+
+  By the spectral theorem (Theorem~\ref{thm:spectral}), there exists an orthogonal matrix $\mathbf{V} = [\mathbf{v}_1 \mid \cdots \mid \mathbf{v}_n]$ such that
+  \[
+    \mathbf{A}^{\mathsf{T}}\mathbf{A} = \mathbf{V}\mathbf{\Lambda}\mathbf{V}^{\mathsf{T}},
+  \]
+  where $\mathbf{\Lambda} = \operatorname{diag}(\lambda_1,\dots,\lambda_n)$ with $\lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_n \geq 0$.
+
+  Since $\mathbf{A}^{\mathsf{T}}\mathbf{A}$ has rank $r$, exactly $r$ eigenvalues are positive: $\lambda_1,\dots,\lambda_r > 0$ and $\lambda_{r+1} = \cdots = \lambda_n = 0$.
+
+  Define the \emph{singular values} by $\sigma_i = \sqrt{\lambda_i}$ for $i = 1,\dots,r$. Then $\sigma_1 \geq \cdots \geq \sigma_r > 0$.
+
+  \textbf{Constructing the left singular vectors.} For $i = 1,\dots,r$, define
+  \[
+    \mathbf{u}_i = \frac{1}{\sigma_i} \mathbf{A}\mathbf{v}_i \in \mathbb{R}^m.
+  \]
+  We verify that $\{\mathbf{u}_1,\dots,\mathbf{u}_r\}$ are orthonormal. For $i, j \leq r$:
+  \begin{align*}
+    \langle \mathbf{u}_i, \mathbf{u}_j \rangle
+     & = \frac{1}{\sigma_i \sigma_j} (\mathbf{A}\mathbf{v}_i)^{\mathsf{T}}(\mathbf{A}\mathbf{v}_j)                                                                                            \\
+     & = \frac{1}{\sigma_i \sigma_j} \mathbf{v}_i^{\mathsf{T}} \mathbf{A}^{\mathsf{T}}\mathbf{A} \mathbf{v}_j                                                                                 \\
+     & = \frac{1}{\sigma_i \sigma_j} \mathbf{v}_i^{\mathsf{T}} (\lambda_j \mathbf{v}_j)                                                                                                       \\
+     & = \frac{\lambda_j}{\sigma_i \sigma_j} \mathbf{v}_i^{\mathsf{T}} \mathbf{v}_j = \frac{\sigma_j^2}{\sigma_i \sigma_j} \delta_{ij} = \frac{\sigma_j}{\sigma_i} \delta_{ij} = \delta_{ij}.
+  \end{align*}
+
+  Extend $\{\mathbf{u}_1,\dots,\mathbf{u}_r\}$ to an orthonormal basis $\{\mathbf{u}_1,\dots,\mathbf{u}_m\}$ of $\mathbb{R}^m$ (using Gram-Schmidt if needed). Let $\mathbf{U} = [\mathbf{u}_1 \mid \cdots \mid \mathbf{u}_m]$.
+
+  \textbf{Verification of the decomposition.} By construction, for $j \leq r$:
+  \[
+    \mathbf{A}\mathbf{v}_j = \sigma_j \mathbf{u}_j.
+  \]
+  For $j > r$, we have $\mathbf{A}^{\mathsf{T}}\mathbf{A}\mathbf{v}_j = \lambda_j \mathbf{v}_j = \mathbf{0}$, so $\|\mathbf{A}\mathbf{v}_j\|^2 = \mathbf{v}_j^{\mathsf{T}}\mathbf{A}^{\mathsf{T}}\mathbf{A}\mathbf{v}_j = 0$, thus $\mathbf{A}\mathbf{v}_j = \mathbf{0}$.
+
+  Define the diagonal matrix $\mathbf{\Sigma} \in \mathbb{R}^{m \times n}$ with $\Sigma_{ii} = \sigma_i$ for $i \leq r$ and all other entries zero. Then:
+  \[
+    \mathbf{A}\mathbf{V} = \mathbf{A}[\mathbf{v}_1 \mid \cdots \mid \mathbf{v}_n] = [\sigma_1 \mathbf{u}_1 \mid \cdots \mid \sigma_r \mathbf{u}_r \mid \mathbf{0} \mid \cdots \mid \mathbf{0}] = \mathbf{U}\mathbf{\Sigma}.
+  \]
+  Since $\mathbf{V}$ is orthogonal, $\mathbf{V}^{\mathsf{T}}\mathbf{V} = \mathbf{I}_n$, so $\mathbf{A} = \mathbf{U}\mathbf{\Sigma}\mathbf{V}^{\mathsf{T}}$.
+\end{proof}
+
+\begin{remark}[Thin SVD]
+  For computational purposes, we often use the \emph{thin} (or \emph{reduced}) SVD. If $m \geq n$ and $\operatorname{rank}(\mathbf{A}) = r$, write
+  \[
+    \mathbf{A} = \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^{\mathsf{T}},
+  \]
+  where $\mathbf{U}_r \in \mathbb{R}^{m \times r}$ contains the first $r$ columns of $\mathbf{U}$, $\mathbf{\Sigma}_r = \operatorname{diag}(\sigma_1,\dots,\sigma_r) \in \mathbb{R}^{r \times r}$, and $\mathbf{V}_r \in \mathbb{R}^{n \times r}$ contains the first $r$ columns of $\mathbf{V}$.
+\end{remark}
+
+\begin{proposition}[Connection between SVD and eigenvalues]
+  Let $\mathbf{A} = \mathbf{U}\mathbf{\Sigma}\mathbf{V}^{\mathsf{T}}$ be the SVD of $\mathbf{A} \in \mathbb{R}^{m \times n}$ with singular values $\sigma_1,\dots,\sigma_r$. Then:
+  \begin{enumerate}
+    \item The eigenvalues of $\mathbf{A}^{\mathsf{T}}\mathbf{A}$ are $\sigma_1^2,\dots,\sigma_r^2, 0,\dots,0$, with eigenvectors given by the columns of $\mathbf{V}$.
+    \item The eigenvalues of $\mathbf{A}\mathbf{A}^{\mathsf{T}}$ are $\sigma_1^2,\dots,\sigma_r^2, 0,\dots,0$, with eigenvectors given by the columns of $\mathbf{U}$.
+    \item $\|\mathbf{A}\|_F^2 = \sigma_1^2 + \cdots + \sigma_r^2$.
+  \end{enumerate}
+\end{proposition}
+
+\begin{proof}
+  (1) From the SVD:
+  \begin{align*}
+    \mathbf{A}^{\mathsf{T}}\mathbf{A}
+     & = (\mathbf{U}\mathbf{\Sigma}\mathbf{V}^{\mathsf{T}})^{\mathsf{T}}(\mathbf{U}\mathbf{\Sigma}\mathbf{V}^{\mathsf{T}})                   \\
+     & = \mathbf{V}\mathbf{\Sigma}^{\mathsf{T}}\mathbf{U}^{\mathsf{T}}\mathbf{U}\mathbf{\Sigma}\mathbf{V}^{\mathsf{T}}                       \\
+     & = \mathbf{V}\mathbf{\Sigma}^{\mathsf{T}}\mathbf{\Sigma}\mathbf{V}^{\mathsf{T}} = \mathbf{V} \mathbf{\Lambda} \mathbf{V}^{\mathsf{T}},
+  \end{align*}
+  where $\mathbf{\Lambda} = \mathbf{\Sigma}^{\mathsf{T}}\mathbf{\Sigma} = \operatorname{diag}(\sigma_1^2,\dots,\sigma_r^2, 0,\dots,0)$.
+
+  (2) Similarly, $\mathbf{A}\mathbf{A}^{\mathsf{T}} = \mathbf{U}\mathbf{\Sigma}\mathbf{\Sigma}^{\mathsf{T}}\mathbf{U}^{\mathsf{T}}$ with the same eigenvalues.
+
+  (3) By Proposition~\ref{prop:frobenius-trace}:
+  \[
+    \|\mathbf{A}\|_F^2 = \operatorname{tr}(\mathbf{A}^{\mathsf{T}}\mathbf{A}) = \operatorname{tr}(\mathbf{V}\mathbf{\Lambda}\mathbf{V}^{\mathsf{T}}) = \operatorname{tr}(\mathbf{\Lambda}) = \sum_{i=1}^{r} \sigma_i^2.
+  \]
+\end{proof}
+
+\begin{remark}[Applications of SVD]
+  SVD is one of the most versatile tools in numerical linear algebra:
+  \begin{itemize}
+    \item \textbf{Low-rank approximation}: The best rank-$k$ approximation to $\mathbf{A}$ in Frobenius norm is $\mathbf{A}_k = \sum_{i=1}^{k} \sigma_i \mathbf{u}_i \mathbf{v}_i^{\mathsf{T}}$ (Eckart-Young theorem).
+    \item \textbf{Pseudoinverse}: The Moore-Penrose pseudoinverse is $\mathbf{A}^+ = \mathbf{V}\mathbf{\Sigma}^+\mathbf{U}^{\mathsf{T}}$, used for solving least-squares problems.
+    \item \textbf{Data compression}: Images, videos, and signals can be compressed by keeping only the largest singular values.
+    \item \textbf{Numerical stability}: SVD-based algorithms are numerically robust and reveal the conditioning of a matrix through the ratio $\sigma_1/\sigma_r$ (condition number).
+    \item \textbf{Recommender systems}: Collaborative filtering uses SVD to factorize user-item rating matrices, discovering latent factors.
+  \end{itemize}
+\end{remark}
+
 \section{Principal Component Analysis}
 
 \subsection{The Geometric Problem}
@@ -820,6 +932,30 @@ Thus we can optimize over matrices $\mathbf{W} \in \mathbb{R}^{d \times k}$ with
   Again, $\mathbf{w}$ must be an eigenvector. Combined with the orthogonality constraints $\mathbf{w}^{\mathsf{T}}\mathbf{u}_i = 0$ for $i < j$, we have $\mathbf{w} \in \operatorname{span}(\mathbf{u}_j,\mathbf{u}_{j+1},\dots,\mathbf{u}_d)$. To maximize the objective $\lambda$, choose $\mathbf{w} = \mathbf{u}_j$ with eigenvalue $\lambda_j$.
 
   By induction, the first $k$ principal components are $\mathbf{u}_1,\dots,\mathbf{u}_k$.
+\end{remark}
+
+\begin{remark}[Connection between PCA and SVD]\label{rem:pca-svd}
+  PCA can be computed directly using SVD without forming the covariance matrix.
+
+  Let $\mathbf{X} \in \mathbb{R}^{N \times d}$ be the centered data matrix with rows $\mathbf{x}_i^{\mathsf{T}}$. Compute the thin SVD:
+  \[
+    \mathbf{X} = \mathbf{U}_X \mathbf{\Sigma} \mathbf{V}^{\mathsf{T}},
+  \]
+  where $\mathbf{U}_X \in \mathbb{R}^{N \times r}$, $\mathbf{\Sigma} = \operatorname{diag}(\sigma_1,\dots,\sigma_r) \in \mathbb{R}^{r \times r}$, and $\mathbf{V} \in \mathbb{R}^{d \times r}$ with $r = \operatorname{rank}(\mathbf{X})$.
+
+  The covariance matrix is:
+  \[
+    \mathbf{C} = \frac{1}{N}\mathbf{X}^{\mathsf{T}}\mathbf{X} = \frac{1}{N}\mathbf{V}\mathbf{\Sigma}^{\mathsf{T}}\mathbf{U}_X^{\mathsf{T}}\mathbf{U}_X\mathbf{\Sigma}\mathbf{V}^{\mathsf{T}} = \frac{1}{N}\mathbf{V}\mathbf{\Sigma}^2\mathbf{V}^{\mathsf{T}}.
+  \]
+
+  Comparing with the spectral decomposition $\mathbf{C} = \mathbf{U}\mathbf{\Lambda}\mathbf{U}^{\mathsf{T}}$, we see:
+  \begin{itemize}
+    \item \textbf{Principal components}: The columns of $\mathbf{V}$ are the principal components (eigenvectors of $\mathbf{C}$).
+    \item \textbf{Eigenvalues}: $\lambda_i = \frac{\sigma_i^2}{N}$ for $i = 1,\dots,r$.
+    \item \textbf{Variance explained}: The variance captured by the $i$-th principal component is $\frac{\sigma_i^2}{N}$.
+  \end{itemize}
+
+  \textbf{Computational advantage}: Computing SVD of $\mathbf{X} \in \mathbb{R}^{N \times d}$ is often faster and more numerically stable than forming $\mathbf{C} = \mathbf{X}^{\mathsf{T}}\mathbf{X} \in \mathbb{R}^{d \times d}$ and computing its eigendecomposition, especially when $N \gg d$ or $d \gg N$.
 \end{remark}
 
 \begin{corollary}[PCA algorithm]
