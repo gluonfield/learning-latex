@@ -482,7 +482,7 @@ $P(A|B)$ asks: \emph{given we're in $B$}, what fraction is in $A$? That's $\dfra
     \end{tikzpicture}
 \end{center}
 
-\begin{example}[Common Convex and Concave Functions]
+\begin{example}[Common Convex and Concave Functions]~\\
     \begin{itemize}
         \item \textbf{Convex}: $x^2$, $e^x$, $|x|$, $x \log x$ (for $x > 0$), $-\log x$ (for $x > 0$)
         \item \textbf{Concave}: $\log x$ (for $x > 0$), $\sqrt{x}$ (for $x \geq 0$), $-x^2$
@@ -511,6 +511,48 @@ $P(A|B)$ asks: \emph{given we're in $B$}, what fraction is in $A$? That's $\dfra
         -\log(\mathbb{E}[X]) \leq \mathbb{E}[-\log X], \quad \text{equivalently} \quad \log(\mathbb{E}[X]) \geq \mathbb{E}[\log X].
     \]
     This is the \textbf{log-sum inequality}, used in proving KL divergence is non-negative.
+\end{example}
+
+\begin{definition}[Proper Scoring Rule]
+    A \textbf{scoring rule} $S(p, y)$ measures the quality of a probabilistic forecast $p$ given outcome $y$. Lower scores indicate better predictions.
+
+    A scoring rule is \textbf{proper} if a forecaster minimizes their expected score by reporting their true belief $q$:
+    \[
+        \mathbb{E}_{y \sim q}[S(q, y)] \leq \mathbb{E}_{y \sim q}[S(p, y)] \quad \text{for all } p.
+    \]
+    It is \textbf{strictly proper} if equality holds only when $p = q$---reporting anything other than your true belief strictly increases your expected score.
+\end{definition}
+
+\begin{remark}[Why Strict Properness Matters]
+    Strictly proper scoring rules incentivize honest probability reporting. If a rule is not strictly proper, a forecaster might game the system by reporting something other than their true belief without penalty.
+\end{remark}
+
+\begin{example}[Brier Score and Ensemble Averaging]
+    The \textbf{Brier score} is a strictly proper scoring rule. For predicted probability $p$ and outcome $y \in \{0, 1\}$:
+    \[
+        \text{Brier}(p, y) = (p - y)^2.
+    \]
+    This is convex in $p$ since $\frac{d^2}{dp^2}(p - y)^2 = 2 > 0$.
+
+    \textbf{Proof of strict properness}: Let the true probability be $q = P(Y = 1)$. The expected Brier score when reporting $p$ is:
+    \begin{align*}
+        \mathbb{E}_{y \sim q}[(p - y)^2] & = q(p - 1)^2 + (1-q)(p - 0)^2           \\
+                                         & = q(1 - 2p + p^2) + (1-q)p^2            \\
+                                         & = q - 2pq + p^2 = (p - q)^2 + q(1 - q).
+    \end{align*}
+    Since $q(1-q)$ is constant, this is minimized uniquely at $p = q$.
+
+    \textbf{Application}: Suppose $k$ models predict probabilities $p_1, \ldots, p_k$ for the same event. Let $P$ be a random variable that equals $p_i$ with probability $1/k$ (i.e., pick a model uniformly at random). Then $\mathbb{E}[P] = \bar{p}$.
+
+    Since $f(x) = (x - y)^2$ is convex, Jensen's inequality gives:
+    \[
+        f(\mathbb{E}[P]) \leq \mathbb{E}[f(P)] \quad \Longrightarrow \quad (\mathbb{E}[P] - y)^2 \leq \mathbb{E}[(P - y)^2].
+    \]
+    Substituting:
+    \[
+        \underbrace{(\bar{p} - y)^2}_{\text{ensemble Brier}} \leq \underbrace{\frac{1}{k}\sum_{i=1}^{k} (p_i - y)^2}_{\text{mean of individual Briers}}.
+    \]
+    The ensemble's Brier score is at most the mean of the individual Brier scores. This explains why \emph{averaging predictions improves calibration}---the ensemble is at least as good as a randomly chosen model (in expectation), and strictly better when models disagree.
 \end{example}
 
 \subsection{Entropy: Measuring Uncertainty}
