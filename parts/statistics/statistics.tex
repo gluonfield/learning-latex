@@ -1,5 +1,705 @@
 \part{Statistics}
 
 \chapter{Random Variables and Distributions}
-% Your notes here.
 
+\section{Probability Measure}
+
+\begin{definition}[Probability Space]
+    A \textbf{probability space} is a triple $(\Omega, \mathcal{F}, P)$ where:
+    \begin{itemize}
+        \item $\Omega$ is the \textbf{sample space}---the set of all possible outcomes.
+        \item $\mathcal{F}$ is a \textbf{$\sigma$-algebra} (or $\sigma$-field) on $\Omega$---a collection of subsets of $\Omega$ (called \emph{events}) that is closed under complementation and countable unions.
+        \item $P: \mathcal{F} \to [0,1]$ is a \textbf{probability measure}---a function assigning probabilities to events.
+    \end{itemize}
+\end{definition}
+
+\begin{definition}[Probability Measure]
+    A function $P: \mathcal{F} \to [0,1]$ is a \textbf{probability measure} if it satisfies the \textbf{Kolmogorov axioms}:
+    \begin{enumerate}
+        \item \textbf{Non-negativity}: $P(A) \geq 0$ for all $A \in \mathcal{F}$.
+        \item \textbf{Normalization}: $P(\Omega) = 1$.
+        \item \textbf{Countable additivity}: For any countable collection of pairwise disjoint events $\{A_i\}_{i=1}^\infty$,
+              \[
+                  P\left( \bigcup_{i=1}^\infty A_i \right) = \sum_{i=1}^\infty P(A_i).
+              \]
+    \end{enumerate}
+\end{definition}
+
+\begin{definition}[Random Variable]
+    A \textbf{random variable} $X$ is a measurable function $X: \Omega \to \mathbb{R}$. That is, for every Borel set $B \subseteq \mathbb{R}$, the preimage $X^{-1}(B) = \{\omega \in \Omega : X(\omega) \in B\}$ belongs to $\mathcal{F}$.
+
+    The \textbf{distribution} (or \textbf{law}) of $X$ is the probability measure $P_X$ on $\mathbb{R}$ defined by:
+    \[
+        P_X(B) = P(X \in B) = P(\{\omega : X(\omega) \in B\}).
+    \]
+\end{definition}
+
+\begin{remark}[Why This Matters]
+    The formal framework ensures:
+    \begin{itemize}
+        \item Events are well-defined sets we can assign probabilities to.
+        \item Probabilities are consistent: $P(A) + P(A^c) = 1$, probabilities of disjoint events add up.
+        \item Random variables connect abstract outcomes $\omega$ to numerical values we can compute with.
+    \end{itemize}
+    In practice, we often work directly with distributions $p(x)$ without explicitly constructing $(\Omega, \mathcal{F}, P)$.
+\end{remark}
+
+\section{Expectation}
+
+\begin{definition}[Expected Value]
+    The expected value (or mean) of a random variable $X$ is:
+    \begin{itemize}
+        \item \textbf{Discrete case}: If $X$ takes values $\{x_1, x_2, \ldots\}$ with probabilities $P(X = x_i)$,
+              \[
+                  \mathbb{E}[X] = \sum_{i} x_i \, P(X = x_i).
+              \]
+        \item \textbf{Continuous case}: If $X$ has probability density function $p(x)$,
+              \[
+                  \mathbb{E}[X] = \int_{-\infty}^{\infty} x \, p(x) \, dx.
+              \]
+    \end{itemize}
+    For a function $f(X)$ of a random variable:
+    \[
+        \mathbb{E}[f(X)] = \sum_{i} f(x_i) \, P(X = x_i) \quad \text{or} \quad \mathbb{E}[f(X)] = \int f(x) \, p(x) \, dx.
+    \]
+\end{definition}
+
+\begin{remark}[Subscript Notation for Expectations]
+    The subscript on $\mathbb{E}$ specifies \emph{which} random variable(s) we are averaging over and \emph{what distribution} they follow.
+
+    \textbf{Key distinction:}
+    \begin{itemize}
+        \item $\pi(a|s)$ is a \textbf{number} — the probability of action $a$ given state $s$.
+        \item $\pi(\cdot|s)$ is a \textbf{distribution} over actions (the dot marks where the random variable goes).
+    \end{itemize}
+
+    \textbf{Notation meanings:}
+    \begin{itemize}
+        \item $\mathbb{E}_{x \sim p}[f(x)]$ means ``average $f(x)$ where $x$ is drawn from distribution $p$.'' This is just:
+              \[
+                  \mathbb{E}_{x \sim p}[f(x)] = \sum_{x} p(x) \cdot f(x) \quad \text{or} \quad \int p(x) \cdot f(x) \, dx.
+              \]
+        \item $\mathbb{E}_{a \sim \pi(\cdot|s)}[f(a)]$ means ``average $f(a)$ over the distribution $\pi(\cdot|s)$'':
+              \[
+                  \mathbb{E}_{a \sim \pi(\cdot|s)}[f(a)] = \sum_{a \in \mathcal{A}} \pi(a|s) \cdot f(a).
+              \]
+              Here $\pi(\cdot|s)$ is the distribution, and $\pi(a|s)$ gives the weight for each action $a$.
+        \item $\mathbb{E}_\pi[\cdot]$ is shorthand for ``expectation over all randomness from following policy $\pi$'':
+              \begin{enumerate}
+                  \item At each state $s_t$, sample action: $a_t \sim \pi(\cdot|s_t)$
+                  \item Environment gives next state: $s_{t+1} \sim P(\cdot|s_t, a_t)$
+              \end{enumerate}
+              So $\mathbb{E}_\pi\bigl[\sum_t \gamma^t r_t\bigr]$ averages over all possible trajectories.
+    \end{itemize}
+\end{remark}
+
+\begin{example}
+    Suppose we have 3 possible actions: $\mathcal{A} = \{\text{left}, \text{stay}, \text{right}\}$.
+
+    The policy $\pi(\cdot|s)$ assigns a probability to each action:
+    \begin{center}
+        \begin{tabular}{c|ccc}
+            $a$        & left & stay & right \\
+            \hline
+            $\pi(a|s)$ & 0.2  & 0.3  & 0.5
+        \end{tabular}
+    \end{center}
+
+    Suppose $f(a)$ gives some value for each action:
+    \begin{center}
+        \begin{tabular}{c|ccc}
+            $a$    & left & stay & right \\
+            \hline
+            $f(a)$ & 10   & 4    & 8
+        \end{tabular}
+    \end{center}
+
+    Then $\mathbb{E}_{a \sim \pi(\cdot|s)}[f(a)]$ is just a weighted average:
+    \begin{align*}
+        \mathbb{E}_{a \sim \pi(\cdot|s)}[f(a)] & = \sum_{a \in \mathcal{A}} \pi(a|s) \cdot f(a)                                                                                  \\
+                                               & = \pi(\text{left}|s) \cdot f(\text{left}) + \pi(\text{stay}|s) \cdot f(\text{stay}) + \pi(\text{right}|s) \cdot f(\text{right}) \\
+                                               & = 0.2 \times 10 + 0.3 \times 4 + 0.5 \times 8                                                                                   \\
+                                               & = 2 + 1.2 + 4 = 7.2.
+    \end{align*}
+    The subscript $a \sim \pi(\cdot|s)$ just says: ``sum over all $a$, weighted by $\pi(a|s)$.''
+\end{example}
+
+\begin{remark}[Conditional Expectation]
+    The notation $\mathbb{E}[X | Y = y]$ means the expected value of $X$ given that $Y$ takes value $y$:
+    \[
+        \mathbb{E}[X | Y = y] = \sum_x x \, P(X = x | Y = y) = \int x \, p(x|y) \, dx.
+    \]
+    In reinforcement learning, $\mathbb{E}_\pi[\cdot | s_0 = s]$ means ``expectation over trajectories, given we start in state $s$.''
+\end{remark}
+
+\section{Conditional Probability and Bayes' Theorem}
+
+\begin{definition}[Conditional Probability]
+    The probability of event $A$ given that event $B$ has occurred is:
+    \[
+        P(A|B) = \frac{P(A \cap B)}{P(B)}, \quad \text{provided } P(B) > 0.
+    \]
+\end{definition}
+
+Think of probability as area. The rectangle below has total area 1:
+\begin{center}
+    \begin{tikzpicture}
+        % Total space
+        \fill[gray!15] (0,0) rectangle (6,3);
+        \draw[thick] (0,0) rectangle (6,3);
+
+        % B region
+        \fill[blue!25] (2,0) rectangle (6,3);
+        \draw[thick, blue!70!black] (2,0) rectangle (6,3);
+
+        % A region
+        \fill[red!25] (0,0) rectangle (3.5,3);
+
+        % Intersection (A ∩ B)
+        \fill[purple!40] (2,0) rectangle (3.5,3);
+
+        % Borders
+        \draw[thick, red!70!black] (0,0) rectangle (3.5,3);
+        \draw[thick, blue!70!black] (2,0) rectangle (6,3);
+        \draw[thick] (0,0) rectangle (6,3);
+
+        % Labels
+        \node at (1, 1.5) {$A \setminus B$};
+        \node at (2.75, 1.5) {$A \cap B$};
+        \node at (4.75, 1.5) {$B \setminus A$};
+
+        % Outside labels
+        \node[red!70!black] at (1.75, 3.3) {$A$};
+        \node[blue!70!black] at (4, 3.3) {$B$};
+    \end{tikzpicture}
+\end{center}
+$P(A|B)$ asks: \emph{given we're in $B$}, what fraction is in $A$? That's $\dfrac{\text{purple}}{\text{purple} + \text{blue}} = \dfrac{P(A \cap B)}{P(B)}$.
+
+\begin{theorem}[Bayes' Theorem]
+    \[
+        P(A|B) = \frac{P(B|A) \cdot P(A)}{P(B)}.
+    \]
+\end{theorem}
+
+\begin{proof}
+    The purple region $P(A \cap B)$ can be computed two ways:
+    \begin{center}
+        \begin{tikzpicture}
+            % Method 1: Start with A
+            \begin{scope}
+                \fill[gray!15] (0,0) rectangle (4,2);
+                \fill[red!25] (0,0) rectangle (2.3,2);
+                \fill[purple!40] (1.3,0) rectangle (2.3,2);
+                \draw[thick] (0,0) rectangle (4,2);
+                \draw[thick, red!70!black] (0,0) rectangle (2.3,2);
+
+                \node[font=\small] at (0.65, 1) {$A$};
+                \node[font=\small] at (1.8, 1) {\footnotesize $A \cap B$};
+
+                \draw[decorate, decoration={brace, amplitude=5pt, raise=2pt}] (0,2) -- (2.3,2);
+                \node[anchor=south, font=\footnotesize] at (1.15, 2.3) {$P(A)$};
+
+                \draw[decorate, decoration={brace, amplitude=4pt, raise=2pt, mirror}] (1.3,0) -- (2.3,0);
+                \node[anchor=north, font=\footnotesize] at (1.8, -0.25) {$P(B|A)$};
+            \end{scope}
+
+            \node at (4.7, 1) {$=$};
+
+            % Method 2: Start with B
+            \begin{scope}[xshift=5.4cm]
+                \fill[gray!15] (0,0) rectangle (4,2);
+                \fill[blue!25] (1,0) rectangle (4,2);
+                \fill[purple!40] (1,0) rectangle (2,2);
+                \draw[thick] (0,0) rectangle (4,2);
+                \draw[thick, blue!70!black] (1,0) rectangle (4,2);
+
+                \node[font=\small] at (1.5, 1) {\footnotesize $A \cap B$};
+                \node[font=\small] at (3, 1) {$B$};
+
+                \draw[decorate, decoration={brace, amplitude=5pt, raise=2pt}] (1,2) -- (4,2);
+                \node[anchor=south, font=\footnotesize] at (2.5, 2.3) {$P(B)$};
+
+                \draw[decorate, decoration={brace, amplitude=4pt, raise=2pt, mirror}] (1,0) -- (2,0);
+                \node[anchor=north, font=\footnotesize] at (1.5, -0.25) {$P(A|B)$};
+            \end{scope}
+        \end{tikzpicture}
+    \end{center}
+    \[
+        P(A) \cdot P(B|A) = P(A \cap B) = P(B) \cdot P(A|B)
+    \]
+    Solving for $P(A|B)$ gives the result.
+\end{proof}
+
+\begin{remark}[Intuition]
+    Bayes' theorem lets you \emph{reverse} the conditioning:
+    \begin{itemize}
+        \item $P(B|A)$ = probability of $B$ given $A$ (often easy to know)
+        \item $P(A|B)$ = probability of $A$ given $B$ (often what we want)
+    \end{itemize}
+    Example: $A$ = ``has disease'', $B$ = ``test positive''.
+    \begin{itemize}
+        \item $P(B|A)$ = sensitivity of test (known from test design)
+        \item $P(A|B)$ = chance patient has disease given positive test (what doctor needs)
+    \end{itemize}
+\end{remark}
+
+\begin{proposition}[Law of Total Probability]
+    If $\{A_1, A_2, \ldots, A_n\}$ partition the sample space (disjoint, cover everything), then:
+    \[
+        P(B) = \sum_{i=1}^{n} P(B|A_i) \cdot P(A_i).
+    \]
+\end{proposition}
+
+\begin{proof}
+    Since the $A_i$ partition the space, $B$ is the disjoint union $B = (B \cap A_1) \cup (B \cap A_2) \cup \cdots \cup (B \cap A_n)$. Therefore:
+    \[
+        P(B) = \sum_{i=1}^{n} P(B \cap A_i) = \sum_{i=1}^{n} P(B|A_i) \cdot P(A_i). \qedhere
+    \]
+\end{proof}
+
+\begin{corollary}[Extended Bayes' Theorem]
+    Combining Bayes' theorem with the law of total probability:
+    \[
+        P(A_i|B) = \frac{P(B|A_i) \cdot P(A_i)}{\sum_{j=1}^{n} P(B|A_j) \cdot P(A_j)}.
+    \]
+\end{corollary}
+
+\section{Binary Classification Metrics}
+
+\begin{definition}[Confusion Matrix Terminology]
+    For binary classification, let the positive class be $1$ and the negative class be $0$.
+    \begin{itemize}
+        \item \textbf{True Positive (TP)}: predicted $1$, actual $1$.
+        \item \textbf{False Positive (FP)}: predicted $1$, actual $0$ (``type I error'').
+        \item \textbf{True Negative (TN)}: predicted $0$, actual $0$.
+        \item \textbf{False Negative (FN)}: predicted $0$, actual $1$ (``type II error'').
+    \end{itemize}
+\end{definition}
+
+\begin{center}
+    \begin{tikzpicture}[font=\small]
+        % Dimensions (all in cm)
+        \def\cellw{2.2}       % data cell width
+        \def\cellh{1.0}       % data cell height
+        \def\labelw{2.0}      % row/col label width (fixed)
+        \def\labelh{0.6}      % col label height
+        \def\gap{0.2}         % gap between row labels and grid
+
+        \tikzset{
+            cell/.style={minimum width=\cellw cm, minimum height=\cellh cm, anchor=center},
+            poscol/.style={fill=green!20, draw=green!55!black, line width=0.6pt},
+            negcol/.style={fill=red!12, draw=red!60!black, line width=0.6pt},
+            collabel/.style={minimum width=\cellw cm, minimum height=\labelh cm, anchor=center,
+                    fill=gray!8, draw=black!40, line width=0.5pt, font=\footnotesize},
+            rowlabel/.style={text width=\labelw cm, minimum height=\cellh cm, anchor=center,
+                    fill=gray!8, draw=black!40, line width=0.5pt, font=\footnotesize, align=center},
+            grouplabel/.style={font=\small\bfseries}
+        }
+
+        % Grid coordinates
+        \def\gridleft{0}
+        \def\gridright{4.4}
+        \def\gridmid{2.2}
+        \def\colA{1.1}
+        \def\colB{3.3}
+        \def\rowTop{0.5}
+        \def\rowBot{-0.5}
+        \def\gridbottom{-1}
+        \def\gridtop{1}
+        \def\collabely{1.5}
+
+        % Row label positions: center of label box
+        % Right edge at -gap, width is labelw, so center at -gap - labelw/2
+        \def\rowlabelcenter{-1.2}  % -0.2 - 2.0/2 = -1.2
+        \def\rowlabelleft{-2.2}    % left edge of row labels
+        \def\bracex{-2.75}         % brace position (left of labels)
+        \def\predlabelx{-3}      % "Predicted" label position
+
+        % --- Column labels (Actual) ---
+        \node[collabel] at (\colA, \collabely) {Positive (1)};
+        \node[collabel] at (\colB, \collabely) {Negative (0)};
+        \draw[decorate, decoration={brace, amplitude=5pt, raise=3pt}] (\gridleft, 1.85) -- (\gridright, 1.85);
+        \node[grouplabel] at (\gridmid, 2.35) {Actual};
+
+        % --- Row labels (Predicted) ---
+        \node[rowlabel] at (\rowlabelcenter, \rowTop) {Positive (1)};
+        \node[rowlabel] at (\rowlabelcenter, \rowBot) {Negative (0)};
+        \draw[decorate, decoration={brace, amplitude=5pt, raise=3pt, mirror}] (\bracex, \gridbottom) -- (\bracex, \gridtop);
+        \node[grouplabel, rotate=90] at (\predlabelx, 0) {Predicted};
+
+        % --- Data cells ---
+        \node[cell, poscol] at (\colA, \rowTop) {TP};
+        \node[cell, negcol] at (\colB, \rowTop) {FP};
+        \node[cell, negcol] at (\colA, \rowBot) {FN};
+        \node[cell, poscol] at (\colB, \rowBot) {TN};
+
+        % --- Grid lines ---
+        \draw[line width=0.5pt, black!65] (\gridleft, \gridbottom) rectangle (\gridright, \gridtop);
+        \draw[line width=0.5pt, black!65] (\gridmid, \gridbottom) -- (\gridmid, \gridtop);
+        \draw[line width=0.5pt, black!65] (\gridleft, 0) -- (\gridright, 0);
+    \end{tikzpicture}
+\end{center}
+
+\begin{definition}[Precision, Recall, Accuracy, $F_1$]
+    Using TP/FP/TN/FN from the confusion matrix:
+    \begin{align*}
+        \text{Precision} & = \frac{\text{TP}}{\text{TP} + \text{FP}}                                               &  & \text{(how many predicted positives were correct)} \\
+        \text{Recall}    & = \frac{\text{TP}}{\text{TP} + \text{FN}}                                               &  & \text{(how many actual positives were found)}      \\
+        \text{Accuracy}  & = \frac{\text{TP} + \text{TN}}{\text{TP} + \text{FP} + \text{TN} + \text{FN}}           &  & \text{(overall correctness)}                       \\
+        F_1              & = 2 \cdot \frac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}} &  & \text{(harmonic mean of precision and recall)}.
+    \end{align*}
+\end{definition}
+
+\begin{example}[Healthcare Screening]
+    1000 patients take a screening test. True cases: 80. The model flags 90 patients as positive; among them 60 truly have the condition.
+    \[
+        \text{TP} = 60, \quad \text{FP} = 30, \quad \text{FN} = 20, \quad \text{TN} = 890.
+    \]
+    \[
+        \text{Precision} = \frac{60}{60+30} \approx 0.67, \qquad
+        \text{Recall} = \frac{60}{60+20} = 0.75,
+    \]
+    \[
+        \text{Accuracy} = \frac{60+890}{1000} = 0.95, \qquad
+        F_1 \approx 0.71.
+    \]
+    Despite high accuracy (many healthy patients), the $F_1$ score and recall show room to reduce missed cases (FN).
+\end{example}
+
+\begin{remark}[Beyond Binary]
+    For multiclass problems with $K$ classes, build a confusion matrix with one row/column per class. For each class $k$, define:
+    \begin{itemize}
+        \item $\mathrm{TP}_k$: correctly predicted as class $k$
+        \item $\mathrm{FP}_k$: predicted $k$ but actually another class
+        \item $\mathrm{FN}_k$: actually class $k$ but predicted as another
+    \end{itemize}
+    Then per-class precision and recall are:
+    \[
+        \text{Precision}_k = \frac{\mathrm{TP}_k}{\mathrm{TP}_k + \mathrm{FP}_k}, \qquad
+        \text{Recall}_k = \frac{\mathrm{TP}_k}{\mathrm{TP}_k + \mathrm{FN}_k}.
+    \]
+    Aggregation strategies:
+    \begin{align*}
+        \text{Macro-Precision} & = \frac{1}{K} \sum_{k=1}^{K} \text{Precision}_k, \quad
+        \text{Macro-Recall}    = \frac{1}{K} \sum_{k=1}^{K} \text{Recall}_k,                                  \\[4pt]
+        \text{Micro-Precision} & = \frac{\sum_k \mathrm{TP}_k}{\sum_k (\mathrm{TP}_k + \mathrm{FP}_k)}, \quad
+        \text{Micro-Recall}    = \frac{\sum_k \mathrm{TP}_k}{\sum_k (\mathrm{TP}_k + \mathrm{FN}_k)}.
+    \end{align*}
+    Macro averages weight classes equally; micro averages weight by support (frequency).
+\end{remark}
+
+\begin{example}[Emergency Triage Classification]
+    A hospital triage model classifies patients into three urgency levels: \textbf{Critical} (immediate care), \textbf{Moderate} (urgent but stable), and \textbf{Normal} (routine). The confusion matrix:
+    \begin{center}
+        \begin{tabular}{l|ccc|c}
+                         & \multicolumn{3}{c|}{Actual}                                   \\
+            Predicted    & Critical                    & Moderate & Normal & Total Pred. \\
+            \hline
+            Critical     & 45                          & 5        & 2      & 52          \\
+            Moderate     & 10                          & 60       & 15     & 85          \\
+            Normal       & 5                           & 15       & 180    & 200         \\
+            \hline
+            Total Actual & 60                          & 80       & 197    & 337
+        \end{tabular}
+    \end{center}
+
+    \textbf{Per-class metrics:}
+    \begin{align*}
+        \text{Critical:} \quad & \text{Precision} = \tfrac{45}{52} \approx 0.87, \quad \text{Recall} = \tfrac{45}{60} = 0.75     \\
+        \text{Moderate:} \quad & \text{Precision} = \tfrac{60}{85} \approx 0.71, \quad \text{Recall} = \tfrac{60}{80} = 0.75     \\
+        \text{Normal:} \quad   & \text{Precision} = \tfrac{180}{200} = 0.90, \quad \text{Recall} = \tfrac{180}{197} \approx 0.91
+    \end{align*}
+
+    \textbf{Aggregated metrics:}
+    \begin{align*}
+        \text{Macro-Precision} & = \tfrac{0.87 + 0.71 + 0.90}{3} \approx 0.83, \quad
+        \text{Macro-Recall} = \tfrac{0.75 + 0.75 + 0.91}{3} \approx 0.80                                                      \\[4pt]
+        \text{Micro-Precision} & = \tfrac{45 + 60 + 180}{52 + 85 + 200} = \tfrac{285}{337} \approx 0.85 = \text{Micro-Recall}
+    \end{align*}
+    The model has high precision for Critical (few false alarms for emergencies) but lower recall (15 critical patients were under-triaged). In healthcare, under-triaging critical patients is dangerous---optimizing for Critical recall is essential.
+\end{example}
+
+\begin{remark}[Analogy: High Recall vs High Precision]
+    Think of medical screening:
+    \begin{itemize}
+        \item \textbf{High recall}, lower precision: a sensitive screening test that catches almost everyone who is sick (few FN) but sometimes flags healthy people (more FP). Good for early detection; follow-up tests disambiguate.
+        \item \textbf{High precision}, lower recall: a conservative confirmatory test that rarely cries wolf (few FP) but may miss some cases (more FN). Good when false alarms are costly.
+    \end{itemize}
+    In information retrieval: high recall surfaces many documents (including marginal ones), while high precision shows only the most relevant few.
+\end{remark}
+
+\section{Information Theory and KL Divergence}
+
+\subsection{Convexity and Jensen's Inequality}
+
+\begin{definition}[Convex Function]
+    A function $f: \mathbb{R} \to \mathbb{R}$ is \textbf{convex} if for all $x, y \in \mathbb{R}$ and $\lambda \in [0,1]$:
+    \[
+        f(\lambda x + (1-\lambda) y) \leq \lambda f(x) + (1-\lambda) f(y).
+    \]
+    Geometrically, the line segment connecting $(x, f(x))$ and $(y, f(y))$ lies above the graph of $f$.
+
+    A function is \textbf{strictly convex} if the inequality is strict for $\lambda \in (0,1)$ and $x \neq y$.
+
+    A function is \textbf{concave} if $-f$ is convex (inequality reversed).
+\end{definition}
+
+\begin{center}
+    \begin{tikzpicture}[scale=0.9]
+        \draw[->] (-0.3,0) -- (4.5,0) node[right] {$x$};
+        \draw[->] (0,-0.3) -- (0,3.5) node[above] {$f(x)$};
+
+        % Convex curve
+        \draw[thick, blue, domain=0.3:4, samples=50] plot (\x, {0.3*(\x-2)^2 + 0.5});
+
+        % Points x and y
+        \def\xa{1}
+        \def\xb{3.5}
+        \pgfmathsetmacro{\ya}{0.3*(\xa-2)^2 + 0.5}
+        \pgfmathsetmacro{\yb}{0.3*(\xb-2)^2 + 0.5}
+
+        % Chord (secant line)
+        \draw[thick, red, dashed] (\xa, \ya) -- (\xb, \yb);
+
+        % Midpoint
+        \def\lam{0.6}
+        \pgfmathsetmacro{\xm}{\lam*\xa + (1-\lam)*\xb}
+        \pgfmathsetmacro{\ym}{0.3*(\xm-2)^2 + 0.5}
+        \pgfmathsetmacro{\ymchord}{\lam*\ya + (1-\lam)*\yb}
+
+        % Points
+        \fill[blue] (\xa, \ya) circle (2pt) node[above left, font=\small] {$(x, f(x))$};
+        \fill[blue] (\xb, \yb) circle (2pt) node[above right, font=\small] {$(y, f(y))$};
+        \fill[green!50!black] (\xm, \ym) circle (2pt);
+        \fill[red] (\xm, \ymchord) circle (2pt);
+
+        % Vertical line showing gap
+        \draw[dotted, thick] (\xm, \ym) -- (\xm, \ymchord);
+
+        % Labels
+        \node[green!50!black, below, font=\footnotesize] at (\xm, \ym) {$f(\lambda x + (1{-}\lambda)y)$};
+        \node[red, above, font=\footnotesize] at (\xm, \ymchord) {$\lambda f(x) + (1{-}\lambda)f(y)$};
+    \end{tikzpicture}
+\end{center}
+
+\begin{example}[Common Convex and Concave Functions]
+    \begin{itemize}
+        \item \textbf{Convex}: $x^2$, $e^x$, $|x|$, $x \log x$ (for $x > 0$), $-\log x$ (for $x > 0$)
+        \item \textbf{Concave}: $\log x$ (for $x > 0$), $\sqrt{x}$ (for $x \geq 0$), $-x^2$
+    \end{itemize}
+    A twice-differentiable function is convex iff $f''(x) \geq 0$ for all $x$.
+\end{example}
+
+\begin{theorem}[Jensen's Inequality]
+    Let $f$ be a convex function and $X$ a random variable. Then:
+    \[
+        f(\mathbb{E}[X]) \leq \mathbb{E}[f(X)].
+    \]
+    If $f$ is concave, the inequality reverses: $f(\mathbb{E}[X]) \geq \mathbb{E}[f(X)]$.
+\end{theorem}
+
+\begin{proof}
+    For a convex function, there exists a supporting line at any point. At $\mu = \mathbb{E}[X]$, let $\ell(x) = f(\mu) + f'(\mu)(x - \mu)$ be a tangent line. By convexity, $f(x) \geq \ell(x)$ for all $x$. Taking expectations:
+    \[
+        \mathbb{E}[f(X)] \geq \mathbb{E}[\ell(X)] = f(\mu) + f'(\mu)\mathbb{E}[X - \mu] = f(\mu) = f(\mathbb{E}[X]). \qedhere
+    \]
+\end{proof}
+
+\begin{example}[Applying Jensen's Inequality]
+    Since $-\log$ is convex (as $\frac{d^2}{dx^2}(-\log x) = \frac{1}{x^2} > 0$):
+    \[
+        -\log(\mathbb{E}[X]) \leq \mathbb{E}[-\log X], \quad \text{equivalently} \quad \log(\mathbb{E}[X]) \geq \mathbb{E}[\log X].
+    \]
+    This is the \textbf{log-sum inequality}, used in proving KL divergence is non-negative.
+\end{example}
+
+\subsection{Entropy: Measuring Uncertainty}
+
+\begin{definition}[Entropy]
+    The entropy of a discrete random variable $X$ with distribution $p$ is:
+    \[
+        H(X) = H(p) = -\sum_{x} p(x) \log p(x) = \mathbb{E}_{x \sim p}\left[ -\log p(x) \right].
+    \]
+    For continuous distributions, the \emph{differential entropy} is:
+    \[
+        h(X) = -\int p(x) \log p(x) \, dx.
+    \]
+    We use $\log$ base 2 for bits, or natural log for nats.
+\end{definition}
+
+\begin{remark}[Intuition: Entropy as Expected Surprise]
+    The quantity $-\log p(x)$ measures the ``surprise'' of observing outcome $x$:
+    \begin{itemize}
+        \item If $p(x) = 1$ (certain): surprise $= -\log 1 = 0$
+        \item If $p(x) = 0.5$: surprise $= -\log 0.5 = 1$ bit
+        \item If $p(x) = 0.01$ (rare): surprise $= -\log 0.01 \approx 6.6$ bits
+    \end{itemize}
+    Entropy is the \emph{expected surprise}---how uncertain we are on average.
+\end{remark}
+
+\begin{example}[Coin Flips]
+    For a biased coin with $P(\text{heads}) = p$:
+    \[
+        H = -p \log p - (1-p) \log(1-p).
+    \]
+    \begin{center}
+        \begin{tikzpicture}[scale=0.8]
+            \draw[->] (0,0) -- (5.5,0) node[right] {$p$};
+            \draw[->] (0,0) -- (0,3) node[above] {$H$};
+
+            % Entropy curve
+            \draw[thick, blue, domain=0.01:0.99, samples=100] plot ({5*\x}, {2.5*(-\x*ln(\x)/ln(2) - (1-\x)*ln(1-\x)/ln(2))});
+
+            % Labels
+            \node[below] at (0,0) {$0$};
+            \node[below] at (2.5,0) {$0.5$};
+            \node[below] at (5,0) {$1$};
+            \node[left] at (0,2.5) {$1$};
+
+            % Maximum point
+            \fill[blue] (2.5, 2.5) circle (2pt);
+            \node[above right, font=\small] at (2.5, 2.5) {max at $p=0.5$};
+        \end{tikzpicture}
+    \end{center}
+    Maximum entropy ($H=1$ bit) occurs at $p=0.5$ (most uncertain). At $p=0$ or $p=1$, entropy is 0 (no uncertainty).
+\end{example}
+
+\subsection{KL Divergence: Measuring Distribution Difference}
+
+\begin{definition}[Kullback-Leibler Divergence]
+    The KL divergence from distribution $q$ to distribution $p$ is:
+    \[
+        D_{\mathrm{KL}}(p \| q) = \sum_{x} p(x) \log \frac{p(x)}{q(x)} = \mathbb{E}_{x \sim p}\left[ \log \frac{p(x)}{q(x)} \right].
+    \]
+    Equivalently:
+    \[
+        D_{\mathrm{KL}}(p \| q) = \mathbb{E}_{x \sim p}[\log p(x)] - \mathbb{E}_{x \sim p}[\log q(x)] = -H(p) - \mathbb{E}_{x \sim p}[\log q(x)].
+    \]
+\end{definition}
+
+\begin{remark}[Reading the Notation]
+    $D_{\mathrm{KL}}(p \| q)$ reads as ``KL divergence \emph{from} $q$ \emph{to} $p$'' or ``of $p$ relative to $q$.'' Think of it as: ``How much information do I lose if I use $q$ to approximate $p$?''
+\end{remark}
+
+\begin{proposition}[Properties of KL Divergence]
+    \begin{enumerate}
+        \item \textbf{Non-negativity}: $D_{\mathrm{KL}}(p \| q) \geq 0$, with equality iff $p = q$.
+        \item \textbf{Not symmetric}: $D_{\mathrm{KL}}(p \| q) \neq D_{\mathrm{KL}}(q \| p)$ in general.
+        \item \textbf{Not a metric}: Does not satisfy the triangle inequality.
+    \end{enumerate}
+\end{proposition}
+
+\begin{proof}[Proof of non-negativity]
+    By Jensen's inequality, since $-\log$ is convex:
+    \[
+        D_{\mathrm{KL}}(p \| q) = \mathbb{E}_{x \sim p}\left[ -\log \frac{q(x)}{p(x)} \right] \geq -\log \mathbb{E}_{x \sim p}\left[ \frac{q(x)}{p(x)} \right] = -\log \sum_x p(x) \cdot \frac{q(x)}{p(x)} = -\log 1 = 0.
+    \]
+    Equality holds iff $q(x)/p(x)$ is constant, i.e., $p = q$.
+\end{proof}
+
+\begin{remark}[Information-Theoretic Interpretation]
+    Define the \emph{cross-entropy} from $q$ to $p$:
+    \[
+        H(p, q) = -\mathbb{E}_{x \sim p}[\log q(x)] = -\sum_x p(x) \log q(x).
+    \]
+    This is the expected number of bits needed to encode samples from $p$ using a code optimized for $q$. Then:
+    \[
+        D_{\mathrm{KL}}(p \| q) = H(p, q) - H(p) = \text{(bits using wrong code)} - \text{(bits using optimal code)}.
+    \]
+    KL divergence measures the \emph{extra} bits wasted by using $q$ instead of $p$.
+\end{remark}
+
+\begin{remark}[Asymmetry and Modes]
+    A \textbf{mode} of a distribution is a peak---a local maximum of the density $p(x)$. A distribution with two peaks is \emph{bimodal}:
+    \begin{center}
+        \begin{tikzpicture}[scale=0.6]
+            \draw[->] (0,0) -- (5,0) node[right] {$x$};
+            \draw[->] (0,0) -- (0,2.2) node[above] {$p(x)$};
+            \draw[thick, blue] plot[smooth, domain=0:5, samples=50] (\x, {1.5*exp(-2*(\x-1.5)^2) + 1.5*exp(-2*(\x-3.5)^2)});
+            \fill[blue] (1.5, 1.5) circle (2pt);
+            \fill[blue] (3.5, 1.5) circle (2pt);
+            \node[above, font=\small] at (1.5, 1.5) {mode 1};
+            \node[above, font=\small] at (3.5, 1.5) {mode 2};
+        \end{tikzpicture}
+    \end{center}
+
+    The choice of KL direction determines how $q$ approximates a multimodal $p$. To see why, rewrite each KL divergence:
+    \begin{align*}
+        D_{\mathrm{KL}}(p \| q) & = \underbrace{-H(p)}_{\text{constant}} - \mathbb{E}_{x \sim p}[\log q(x)], \\
+        D_{\mathrm{KL}}(q \| p) & = -H(q) - \mathbb{E}_{x \sim q}[\log p(x)].
+    \end{align*}
+
+    \textbf{Forward KL} minimizes $-\mathbb{E}_{x \sim p}[\log q(x)]$, i.e., maximizes $\mathbb{E}_{x \sim p}[\log q(x)]$.
+
+    This is the expected log-likelihood of $q$ evaluated at samples from $p$. Since $p$ places mass at \emph{both} modes, $q$ must assign reasonable probability to both regions to achieve high expected log-likelihood.
+
+    \textbf{Reverse KL} minimizes $-H(q) - \mathbb{E}_{x \sim q}[\log p(x)]$.
+
+    The term $\mathbb{E}_{x \sim q}[\log p(x)]$ evaluates $\log p$ at samples from $q$. If $q$ spreads across both modes, it will sample the valley between them where $p$ is small, making $\log p(x)$ very negative. Better to concentrate $q$ on one mode where $p$ is large.
+
+    \textbf{Concrete example.} Let $p = \frac{1}{2}\mathcal{N}(0, 1) + \frac{1}{2}\mathcal{N}(4, 1)$ be a mixture of two Gaussians. Suppose we approximate with a single Gaussian $q = \mathcal{N}(\mu, 1)$ and ask: what is the optimal $\mu$?
+    \begin{itemize}
+        \item \textbf{Forward KL}: We maximize $\mathbb{E}_{x \sim p}[\log q(x)]$. Since $p$ samples equally from both modes, $q$ needs to cover both. The optimum is $\mu \approx 2$ (between the modes).
+        \item \textbf{Reverse KL}: We maximize $\mathbb{E}_{x \sim q}[\log p(x)]$. At $\mu = 2$, samples from $q$ land in the valley where $p(x) \approx 0.027$, giving $\log p(x) \approx -3.6$. At $\mu = 0$, samples land near the left mode where $p(x) \approx 0.2$, giving $\log p(x) \approx -1.6$. The optimum is $\mu = 0$ or $\mu = 4$ (on one mode).
+    \end{itemize}
+
+    \begin{center}
+        \begin{tikzpicture}[scale=0.7]
+            % True distribution (bimodal)
+            \begin{scope}
+                \draw[->] (0,0) -- (5,0);
+                \draw[->] (0,0) -- (0,2.5);
+                \draw[thick, blue] plot[smooth, domain=0:5, samples=50] (\x, {1.5*exp(-2*(\x-1.5)^2) + 1.5*exp(-2*(\x-3.5)^2)});
+                \node[blue, above] at (2.5, 2) {$p$ (true)};
+                \node[below] at (2.5, -0.3) {Target: bimodal};
+            \end{scope}
+
+            % Forward KL result
+            \begin{scope}[xshift=6cm]
+                \draw[->] (0,0) -- (5,0);
+                \draw[->] (0,0) -- (0,2.5);
+                \draw[thick, blue, dashed] plot[smooth, domain=0:5, samples=50] (\x, {1.5*exp(-2*(\x-1.5)^2) + 1.5*exp(-2*(\x-3.5)^2)});
+                \draw[thick, red] plot[smooth, domain=0:5, samples=50] (\x, {1.2*exp(-0.3*(\x-2.5)^2)});
+                \node[red, above] at (2.5, 1.5) {$q$};
+                \node[below, align=center, font=\small] at (2.5, -0.3) {Forward KL\\$q$ covers both modes};
+            \end{scope}
+
+            % Reverse KL result
+            \begin{scope}[xshift=12cm]
+                \draw[->] (0,0) -- (5,0);
+                \draw[->] (0,0) -- (0,2.5);
+                \draw[thick, blue, dashed] plot[smooth, domain=0:5, samples=50] (\x, {1.5*exp(-2*(\x-1.5)^2) + 1.5*exp(-2*(\x-3.5)^2)});
+                \draw[thick, red] plot[smooth, domain=0:5, samples=50] (\x, {2*exp(-2*(\x-1.5)^2)});
+                \node[red, above] at (1.5, 2.2) {$q$};
+                \node[below, align=center, font=\small] at (2.5, -0.3) {Reverse KL\\$q$ picks one mode};
+            \end{scope}
+        \end{tikzpicture}
+    \end{center}
+\end{remark}
+
+\begin{remark}[When to Use Each Direction]
+    \textbf{Use forward KL $D_{\mathrm{KL}}(p \| q)$} when you have samples from $p$ and want $q$ to cover all of $p$:
+    \begin{itemize}
+        \item \textbf{Maximum likelihood / supervised learning}: You have data from the true distribution $p_{\text{data}}$ and fit a model $q_\theta$. Minimizing cross-entropy loss is equivalent to minimizing $D_{\mathrm{KL}}(p_{\text{data}} \| q_\theta)$. You want the model to assign probability to \emph{all} training examples.
+        \item \textbf{Density estimation}: When the goal is to capture the full distribution, including rare events.
+    \end{itemize}
+
+    \textbf{Use reverse KL $D_{\mathrm{KL}}(q \| p)$} when you can evaluate $p$ but not sample from it, and you prefer $q$ to be conservative:
+    \begin{itemize}
+        \item \textbf{Variational inference}: The posterior $p(\theta | \text{data})$ is intractable, but you can evaluate it up to a constant. You fit a tractable $q(\theta)$ by minimizing $D_{\mathrm{KL}}(q \| p)$. This gives a $q$ that doesn't put mass where $p$ is small---better to underestimate uncertainty than to be overconfident in wrong regions.
+        \item \textbf{Policy optimization}: In RL, you want the policy to concentrate on high-reward actions, not spread probability over all actions the expert might take.
+    \end{itemize}
+
+    \textbf{Summary}:
+    \begin{center}
+        \begin{tabular}{l|cc}
+                         & Forward $D_{\mathrm{KL}}(p \| q)$ & Reverse $D_{\mathrm{KL}}(q \| p)$ \\
+            \hline
+            Samples from & $p$ (data)                        & $q$ (model)                       \\
+            Evaluates    & $q$ (model)                       & $p$ (target)                      \\
+            Behavior     & mode-covering                     & mode-seeking                      \\
+            Risk         & overconfident in gaps             & misses some modes                 \\
+            Use when     & want full coverage                & want conservative estimate
+        \end{tabular}
+    \end{center}
+\end{remark}

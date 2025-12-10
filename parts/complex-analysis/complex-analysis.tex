@@ -1,0 +1,159 @@
+\part{Complex Analysis}
+
+\chapter{Holomorphic Functions}
+
+\section{The Complex Plane}
+
+\begin{definition}[Complex numbers]
+  The set of \emph{complex numbers} is denoted by $\mathbb{C}$. A complex number $z \in \mathbb{C}$ can be written in the form
+  \begin{equation}
+    z = x + iy,
+  \end{equation}
+  where $x, y \in \mathbb{R}$ and $i$ is the imaginary unit satisfying $i^2 = -1$.
+  We call $x = \operatorname{Re}(z)$ the \emph{real part} and $y = \operatorname{Im}(z)$ the \emph{imaginary part}.
+\end{definition}
+
+\section{Topological Preliminaries}
+
+We define some topological concepts fundamental to complex analysis.
+
+\begin{definition}[Open set]
+  A set $U \subseteq \mathbb{C}$ is \emph{open} if for every point $z_0 \in U$, there exists $\epsilon > 0$ such that the open disk $D(z_0, \epsilon) = \{z \in \mathbb{C} : |z - z_0| < \epsilon\}$ is entirely contained in $U$.
+\end{definition}
+
+\begin{definition}[Curve and Closed Curve]
+  A \emph{curve} (or \emph{path}) in $\mathbb{C}$ is a continuous function $\gamma : [a, b] \to \mathbb{C}$.
+  The curve is \emph{closed} if $\gamma(a) = \gamma(b)$.
+  It is \emph{simple} if it does not intersect itself (except possibly at the endpoints).
+\end{definition}
+
+\begin{definition}[Simply connected]
+  An open set $U \subseteq \mathbb{C}$ is \emph{simply connected} if it is path-connected and every closed curve in $U$ can be continuously deformed (contracted) to a point within $U$.
+  Intuitively, $U$ has "no holes".
+\end{definition}
+
+\section{Holomorphic Functions}
+
+\begin{definition}[Complex differentiability]
+  Let $U \subseteq \mathbb{C}$ be an open set and $f : U \to \mathbb{C}$ be a function.
+  We say that $f$ is \emph{complex differentiable} (or \emph{holomorphic}) at a point $z_0 \in U$ if the limit
+  \begin{equation}
+    f'(z_0) = \lim_{z \to z_0} \frac{f(z) - f(z_0)}{z - z_0}
+  \end{equation}
+  exists. If $f$ is holomorphic at every point in $U$, we say $f$ is holomorphic on $U$.
+\end{definition}
+
+\begin{theorem}[Cauchy-Riemann equations]
+  Let $f : U \to \mathbb{C}$ be a function, written as $f(x+iy) = u(x,y) + i v(x,y)$, where $u, v : U \to \mathbb{R}$ are real-differentiable functions.
+  Then $f$ is holomorphic on $U$ if and only if $u$ and $v$ satisfy the \emph{Cauchy-Riemann equations}:
+  \begin{equation}
+    \frac{\partial u}{\partial x} = \frac{\partial v}{\partial y}
+    \quad \text{and} \quad
+    \frac{\partial u}{\partial y} = -\frac{\partial v}{\partial x}.
+  \end{equation}
+\end{theorem}
+
+\begin{proof}
+  ($\implies$) Suppose $f$ is holomorphic at $z = x+iy$. Then the limit
+  \[
+    f'(z) = \lim_{h \to 0} \frac{f(z+h) - f(z)}{h}
+  \]
+  exists and is independent of the path taken by $h$ to $0$.
+
+  \textbf{Case 1}: $h \to 0$ along the real axis. Let $h = \Delta x \in \mathbb{R}$.
+  \begin{align*}
+    f'(z) & = \lim_{\Delta x \to 0} \frac{u(x+\Delta x, y) + i v(x+\Delta x, y) - (u(x,y) + i v(x,y))}{\Delta x}                             \\
+          & = \lim_{\Delta x \to 0} \left( \frac{u(x+\Delta x, y) - u(x,y)}{\Delta x} + i \frac{v(x+\Delta x, y) - v(x,y)}{\Delta x} \right) \\
+          & = \frac{\partial u}{\partial x} + i \frac{\partial v}{\partial x}.
+  \end{align*}
+
+  \textbf{Case 2}: $h \to 0$ along the imaginary axis. Let $h = i\Delta y$ where $\Delta y \in \mathbb{R}$.
+  \begin{align*}
+    f'(z) & = \lim_{\Delta y \to 0} \frac{u(x, y+\Delta y) + i v(x, y+\Delta y) - (u(x,y) + i v(x,y))}{i\Delta y}                                      \\
+          & = \lim_{\Delta y \to 0} \left( \frac{1}{i} \frac{u(x, y+\Delta y) - u(x,y)}{\Delta y} + \frac{v(x, y+\Delta y) - v(x,y)}{\Delta y} \right) \\
+          & = -i \frac{\partial u}{\partial y} + \frac{\partial v}{\partial y} = \frac{\partial v}{\partial y} - i \frac{\partial u}{\partial y}.
+  \end{align*}
+
+  Equating the two expressions for $f'(z)$ and comparing real and imaginary parts gives the Cauchy-Riemann equations:
+  \[
+    \frac{\partial u}{\partial x} = \frac{\partial v}{\partial y}
+    \quad \text{and} \quad
+    \frac{\partial u}{\partial y} = -\frac{\partial v}{\partial x}.
+  \]
+
+
+  ($\impliedby$) Conversely, assume $u, v$ have continuous partial derivatives satisfying the C-R equations.
+  We use the linear approximation of $u$ and $v$. For a small perturbation $h = \Delta x + i\Delta y$:
+  \begin{align*}
+    u(x+\Delta x, y+\Delta y) - u(x,y) & = u_x \Delta x + u_y \Delta y + \epsilon_1, \\
+    v(x+\Delta x, y+\Delta y) - v(x,y) & = v_x \Delta x + v_y \Delta y + \epsilon_2,
+  \end{align*}
+  where $\epsilon_1, \epsilon_2$ vanish faster than $|h|$.
+  Then
+  \begin{align*}
+    f(z+h) - f(z) & = (u_x \Delta x + u_y \Delta y) + i(v_x \Delta x + v_y \Delta y) + \epsilon_1 + i\epsilon_2                 \\
+                  & = (u_x \Delta x - v_x \Delta y) + i(v_x \Delta x + u_x \Delta y) + \epsilon \quad \text{(by C-R equations)} \\
+                  & = (u_x + i v_x)(\Delta x + i\Delta y) + \epsilon                                                            \\
+                  & = (u_x + i v_x) h + \epsilon,
+  \end{align*}
+  where $\epsilon = \epsilon_1 + i\epsilon_2$ and $\epsilon/|h| \to 0$ as $h \to 0$.
+  Dividing by $h$ and taking $h \to 0$ shows that the limit exists and equals $u_x + i v_x$.
+\end{proof}
+
+\chapter{Complex Integration}
+
+\section{Cauchy's Theorem}
+
+\begin{theorem}[Cauchy's integral theorem]
+  Let $U \subseteq \mathbb{C}$ be a simply connected open set and $f : U \to \mathbb{C}$ be a holomorphic function.
+  Then for any closed curve $\gamma$ in $U$,
+  \begin{equation}
+    \oint_{\gamma} f(z) \, dz = 0.
+  \end{equation}
+\end{theorem}
+
+\begin{proof}
+  Write $f = u + i v$ with $u, v$ having continuous partial derivatives that satisfy the Cauchy-Riemann equations on $U$.
+  Because $U$ is simply connected, any piecewise smooth closed curve $\gamma$ bounds a region $D \subset U$ with positive orientation.
+  Split the integral into real and imaginary parts:
+  \[
+    \oint_{\gamma} f(z) \, dz = \oint_{\gamma} (u \, dx - v \, dy) + i \oint_{\gamma} (v \, dx + u \, dy).
+  \]
+  By Green's theorem,
+  \begin{align*}
+    \oint_{\gamma} (u \, dx - v \, dy) & = \iint_{D} \left( -\frac{\partial v}{\partial x} - \frac{\partial u}{\partial y} \right) dA = 0, \\
+    \oint_{\gamma} (v \, dx + u \, dy) & = \iint_{D} \left( \frac{\partial u}{\partial x} - \frac{\partial v}{\partial y} \right) dA = 0,
+  \end{align*}
+  where the last equalities follow from the Cauchy-Riemann equations.
+  Hence both real and imaginary parts vanish, so $\oint_{\gamma} f(z) \, dz = 0$.
+  If $\gamma$ is not simple, decompose it into finitely many simple closed loops and apply the same argument to each component.
+\end{proof}
+
+\begin{theorem}[Cauchy's integral formula]
+  Let $U \subseteq \mathbb{C}$ be a simply connected open set and $f : U \to \mathbb{C}$ be holomorphic.
+  Let $\gamma$ be a simple closed curve in $U$ oriented counter-clockwise, and let $a$ be a point inside $\gamma$. Then
+  \begin{equation}
+    f(a) = \frac{1}{2\pi i} \oint_{\gamma} \frac{f(z)}{z - a} \, dz.
+  \end{equation}
+\end{theorem}
+
+\begin{proof}
+  Let $D$ denote the interior of $\gamma$ and choose $\varepsilon > 0$ so that the closed disk $\overline{B}(a, \varepsilon)$ lies inside $D$.
+  Let $C_{\varepsilon}$ be the positively oriented circle $\lvert z-a \rvert = \varepsilon$.
+  The function $f(z)/(z-a)$ is holomorphic on the punctured domain $D \setminus \overline{B}(a, \varepsilon)$, whose boundary is $\gamma - C_{\varepsilon}$.
+  By Cauchy's integral theorem,
+  \[
+    \oint_{\gamma} \frac{f(z)}{z-a} \, dz = \oint_{C_{\varepsilon}} \frac{f(z)}{z-a} \, dz.
+  \]
+  Parametrize $C_{\varepsilon}$ by $z = a + \varepsilon e^{it}$ for $0 \le t \le 2\pi$:
+  \begin{align*}
+    \oint_{C_{\varepsilon}} \frac{f(z)}{z-a} \, dz
+     & = \int_{0}^{2\pi} \frac{f(a + \varepsilon e^{it})}{\varepsilon e^{it}} \, i \varepsilon e^{it} \, dt = i \int_{0}^{2\pi} f(a + \varepsilon e^{it}) \, dt \\
+     & = 2\pi i \, f(a) + i \int_{0}^{2\pi} \bigl( f(a + \varepsilon e^{it}) - f(a) \bigr) \, dt.
+  \end{align*}
+  The second term tends to $0$ as $\varepsilon \to 0$ by continuity of $f$, so the whole expression converges to $2\pi i \, f(a)$.
+  Since the left-hand side is independent of $\varepsilon$, we obtain
+  \[
+    f(a) = \frac{1}{2\pi i} \oint_{\gamma} \frac{f(z)}{z - a} \, dz.
+  \]
+\end{proof}

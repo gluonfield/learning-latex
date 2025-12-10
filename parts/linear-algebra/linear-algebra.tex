@@ -22,6 +22,18 @@
   We say that $S$ \emph{spans} $V$ if $\operatorname{span}(S) = V$.
 \end{definition}
 
+\begin{center}
+  \begin{tikzpicture}[scale=1]
+    \coordinate (O) at (0,0);
+    \draw[->, thick, -latex] (O) -- (2,1) node[right] {$\mathbf{v}_1$};
+    \draw[->, thick, -latex] (O) -- (1,2) node[above] {$\mathbf{v}_2$};
+    \draw[dashed, gray] (2,1) -- (3,3) -- (1,2);
+    \draw[->, thick, -latex, red] (O) -- (3,3) node[above right] {$\mathbf{v}_1 + \mathbf{v}_2$};
+    \node at (O) [below left] {$\mathbf{0}$};
+    \node at (1.5, -0.5) {Linear combinations cover the plane (span)};
+  \end{tikzpicture}
+\end{center}
+
 \begin{definition}[Linear independence]
   A family of vectors $(\mathbf{v}_1,\dots,\mathbf{v}_n)$ in a vector space $V$ is
   \emph{linearly independent} if
@@ -324,31 +336,7 @@ with $\dim(V) = n$ and $\dim(W) = m$.
   \textbf{Key insight}: The theorem shows that \emph{choosing coordinates is the bridge between abstract theory and practical computation}. Different bases give different matrix representations, but all encode the same underlying linear transformation.
 \end{remark}
 
-\begin{example}[Differentiation of polynomials]
-  Let $V = \mathbb{P}_2$ be the space of polynomials of degree $\leq 2$, and let $W = \mathbb{P}_1$ be polynomials of degree $\leq 1$.
-  Define $T : V \to W$ by $T(p) = p'$ (differentiation).
 
-  Choose bases $\mathcal{B}_V = (1, x, x^2)$ for $V$ and $\mathcal{B}_W = (1, x)$ for $W$.
-
-  \textbf{Step 1}: Apply $T$ to each basis vector of $V$:
-  \begin{align*}
-    T(1)   & = 0 = 0 \cdot 1 + 0 \cdot x,  \\
-    T(x)   & = 1 = 1 \cdot 1 + 0 \cdot x,  \\
-    T(x^2) & = 2x = 0 \cdot 1 + 2 \cdot x.
-  \end{align*}
-
-  \textbf{Step 2}: Read off the columns. The matrix representation is
-  \[
-    \mathbf{A} = \begin{pmatrix} 0 & 1 & 0 \\ 0 & 0 & 2 \end{pmatrix}.
-  \]
-
-  \textbf{Verification}: Consider $p(x) = 3 + 5x + 7x^2$. In coordinates: $\Phi_V(p) = (3, 5, 7)^{\mathsf{T}}$.
-  Then
-  \[
-    \mathbf{A} \Phi_V(p) = \begin{pmatrix} 0 & 1 & 0 \\ 0 & 0 & 2 \end{pmatrix} \begin{pmatrix} 3 \\ 5 \\ 7 \end{pmatrix} = \begin{pmatrix} 5 \\ 14 \end{pmatrix}.
-  \]
-  This represents $5 + 14x$, which is indeed $p'(x) = 5 + 14x$.
-\end{example}
 
 \begin{remark}
   We sometimes write $[T]_{\mathcal{B}_W,\mathcal{B}_V} = \mathbf{A}$ to denote the matrix representation of $T$ with respect to the given bases.
@@ -549,38 +537,129 @@ we have the following useful characterization.
   \end{itemize}
 \end{remark}
 
-\begin{remark}[Applications of the spectral theorem]
-  The spectral theorem is one of the most important results in applied mathematics:
-  \begin{itemize}
-    \item \textbf{Machine learning}:
-          \begin{itemize}
-            \item Covariance matrices in statistics are symmetric, so the spectral theorem guarantees they can be diagonalized with real eigenvalues. This is the foundation of PCA (see next section).
-            \item Kernel methods (SVMs, kernel PCA) use symmetric kernel matrices. The spectral theorem shows that positive semidefinite kernels correspond to valid inner products in feature space.
-            \item Graph neural networks use the graph Laplacian (a symmetric matrix). Spectral decomposition reveals the graph's structure and enables spectral graph convolutions.
-          \end{itemize}
+\section{Applications of the Spectral Theorem}
 
-    \item \textbf{Quantum mechanics}:
-          \begin{itemize}
-            \item Observable quantities (position, momentum, energy) are represented by self-adjoint operators. The spectral theorem guarantees that measurements yield real eigenvalues (the possible measurement outcomes) and that eigenstates form an orthonormal basis.
-            \item The time evolution of quantum states is computed using the spectral decomposition of the Hamiltonian: $e^{-iHt/\hbar} = \sum_n e^{-iE_n t/\hbar}|\psi_n\rangle\langle\psi_n|$.
-          \end{itemize}
+The spectral theorem is not just an abstract result; it is the mathematical engine behind many physical theories and modern algorithms.
 
-    \item \textbf{Physics (classical mechanics)}:
-          \begin{itemize}
-            \item The inertia tensor (describing rotational motion) is symmetric. Its eigenvectors give the principal axes of rotation, and eigenvalues give the principal moments of inertia.
-            \item Normal modes of vibrating systems (springs, molecules, bridges) are found by diagonalizing the symmetric mass-stiffness matrix. Each eigenvector is a normal mode, with frequency $\omega \propto \sqrt{\lambda}$.
-          \end{itemize}
+\subsection{Machine Learning}
 
-    \item \textbf{Theoretical physics}:
-          \begin{itemize}
-            \item In quantum field theory, particle propagators are computed from spectral decompositions of field operators.
-            \item The stress-energy tensor in general relativity is symmetric, and its eigenvalues represent energy densities measured by observers moving along the eigenvector directions.
-          \end{itemize}
+\subsubsection{Covariance Matrices and PCA}
+In statistics and machine learning, the relationship between random variables $X_1, \dots, X_n$ is captured by the covariance matrix $\mathbf{\Sigma} = \mathbb{E}[(\mathbf{X} - \boldsymbol{\mu})(\mathbf{X} - \boldsymbol{\mu})^{\mathsf{T}}]$.
+Since $\mathbf{\Sigma}_{ij} = \operatorname{Cov}(X_i, X_j) = \operatorname{Cov}(X_j, X_i)$, the matrix is symmetric.
+The spectral theorem guarantees $\mathbf{\Sigma} = \mathbf{U}\mathbf{\Lambda}\mathbf{U}^{\mathsf{T}}$, where $\mathbf{U}$ contains the principal directions of variation (eigenvectors) and $\mathbf{\Lambda}$ contains the variances along those directions (eigenvalues).
 
-    \item \textbf{Numerical analysis}: Matrix functions like $e^{\mathbf{A}}$, $\sqrt{\mathbf{A}}$, or $\mathbf{A}^{-1}$ are computed efficiently using spectral decomposition: if $\mathbf{A} = \mathbf{U}\mathbf{\Lambda}\mathbf{U}^{\mathsf{T}}$, then $f(\mathbf{A}) = \mathbf{U}f(\mathbf{\Lambda})\mathbf{U}^{\mathsf{T}}$ where $f(\mathbf{\Lambda})$ is diagonal.
-  \end{itemize}
-  \textbf{Key insight}: Symmetric matrices represent physical quantities and statistical relationships. The spectral theorem shows these can be understood through their eigenvalues (magnitudes) and eigenvectors (principal directions).
-\end{remark}
+\begin{center}
+  \begin{tikzpicture}[scale=0.8]
+    \draw[->] (-3,0) -- (3,0) node[right] {$x_1$};
+    \draw[->] (0,-3) -- (0,3) node[above] {$x_2$};
+    \draw[rotate=30, fill=blue!10] (0,0) ellipse (2 and 1);
+    \draw[->, thick, blue] (0,0) -- (1.73, 1) node[right] {$\mathbf{u}_1 (\lambda_1)$};
+    \draw[->, thick, red] (0,0) -- (-0.5, 0.866) node[left] {$\mathbf{u}_2 (\lambda_2)$};
+    \node at (0,-3.5) {Data distribution aligned with eigenvectors of $\mathbf{\Sigma}$};
+  \end{tikzpicture}
+\end{center}
+
+\subsubsection{Kernel Methods (SVMs)}
+Kernel methods map data $\mathbf{x} \in \mathcal{X}$ to a high-dimensional feature space $\mathcal{H}$ via $\phi: \mathcal{X} \to \mathcal{H}$. The kernel function is $k(\mathbf{x}, \mathbf{y}) = \langle \phi(\mathbf{x}), \phi(\mathbf{y}) \rangle_{\mathcal{H}}$.
+The kernel matrix $\mathbf{K}_{ij} = k(\mathbf{x}_i, \mathbf{x}_j)$ is symmetric and positive semidefinite.
+By the spectral theorem, $\mathbf{K} = \mathbf{V}\mathbf{\Lambda}\mathbf{V}^{\mathsf{T}}$ with $\lambda_i \ge 0$. This ensures that $\mathbf{K}$ represents a valid inner product, allowing linear algorithms (like Support Vector Machines) to learn non-linear decision boundaries efficiently.
+
+\subsubsection{Graph Neural Networks}
+A graph $G=(V,E)$ is represented by its adjacency matrix $\mathbf{A}$. The Graph Laplacian $\mathbf{L} = \mathbf{D} - \mathbf{A}$ (where $\mathbf{D}$ is the degree matrix) is symmetric.
+The spectral decomposition $\mathbf{L} = \mathbf{U}\mathbf{\Lambda}\mathbf{U}^{\mathsf{T}}$ defines the \emph{Graph Fourier Transform}.
+For a signal $\mathbf{x} \in \mathbb{R}^{|V|}$ on the nodes, its Fourier transform is $\hat{\mathbf{x}} = \mathbf{U}^{\mathsf{T}}\mathbf{x}$.
+Spectral convolutions are defined as $g \star \mathbf{x} = \mathbf{U} g(\mathbf{\Lambda}) \mathbf{U}^{\mathsf{T}} \mathbf{x}$, which is the foundation of spectral Graph Neural Networks (GNNs).
+
+\subsection{Quantum Mechanics}
+
+\subsubsection{Observables as Self-Adjoint Operators}
+In quantum mechanics, physical quantities (observables) like position, momentum, and energy are represented by self-adjoint (Hermitian) operators $\hat{A}$ on a Hilbert space $\mathcal{H}$.
+The spectral theorem guarantees:
+\begin{itemize}
+  \item The eigenvalues $a_n$ are real. These are the only possible outcomes of a measurement.
+  \item The eigenvectors $|\psi_n\rangle$ form a complete orthonormal basis.
+\end{itemize}
+Any state $|\psi\rangle$ can be expanded as $|\psi\rangle = \sum_n c_n |\psi_n\rangle$. The probability of measuring $a_n$ is $P(a_n) = |\langle \psi_n | \psi \rangle|^2 = |c_n|^2$.
+
+\subsubsection{Time Evolution}
+The dynamics of a quantum system are governed by the Hamiltonian operator $\hat{H}$. The Schrödinger equation is:
+\[
+  i\hbar \frac{d}{dt}|\psi(t)\rangle = \hat{H}|\psi(t)\rangle.
+\]
+Using the spectral decomposition $\hat{H} = \sum_n E_n |\psi_n\rangle\langle\psi_n|$, the time evolution operator is:
+\[
+  e^{-i\hat{H}t/\hbar} = \sum_n e^{-iE_n t/\hbar} |\psi_n\rangle\langle\psi_n|.
+\]
+This allows us to solve for the state at any time: $|\psi(t)\rangle = \sum_n c_n(0) e^{-iE_n t/\hbar} |\psi_n\rangle$.
+
+\begin{center}
+  \begin{tikzpicture}
+    \draw[->] (0,0) -- (4,0) node[right] {$x$};
+    \draw[->] (0,0) -- (0,3) node[left] {$V(x)$};
+    \draw[thick] (0,2.5) parabola bend (2,0.5) (4,2.5);
+    \draw[blue] (1, 1) -- (3, 1) node[right] {$E_0$};
+    \draw[blue] (0.5, 1.8) -- (3.5, 1.8) node[right] {$E_1$};
+    \node at (2,-0.5) {Energy levels (eigenvalues of $\hat{H}$) in a potential well};
+  \end{tikzpicture}
+\end{center}
+
+\subsection{Physics (Classical Mechanics)}
+
+\subsubsection{The Inertia Tensor}
+For a rigid body, the angular momentum $\mathbf{L}$ is related to the angular velocity $\boldsymbol{\omega}$ by the inertia tensor $\mathbf{I}$: $\mathbf{L} = \mathbf{I}\boldsymbol{\omega}$.
+$\mathbf{I}$ is a symmetric $3 \times 3$ matrix. Its eigenvectors $\mathbf{e}_1, \mathbf{e}_2, \mathbf{e}_3$ define the \emph{principal axes} of rotation.
+In this basis, the tensor is diagonal: $\mathbf{I}' = \operatorname{diag}(I_1, I_2, I_3)$.
+Rotation about a principal axis is stable (for max/min moments) and simplifies the Euler equations of motion.
+
+\subsubsection{Normal Modes of Vibration}
+Coupled oscillators (like masses connected by springs) obey $\mathbf{M}\ddot{\mathbf{x}} + \mathbf{K}\mathbf{x} = \mathbf{0}$, where $\mathbf{M}$ is the mass matrix and $\mathbf{K}$ is the stiffness matrix (both symmetric).
+Assuming a solution $\mathbf{x}(t) = \mathbf{v} e^{i\omega t}$, we get the generalized eigenvalue problem:
+\[
+  (\mathbf{K} - \omega^2 \mathbf{M})\mathbf{v} = \mathbf{0}.
+\]
+Diagonalizing this system yields the \emph{normal modes} (eigenvectors) where all parts of the system oscillate at the same frequency $\omega \propto \sqrt{\lambda}$.
+
+\subsection{Theoretical Physics}
+
+\subsubsection{Propagators in Quantum Field Theory}
+In Quantum Field Theory (QFT), the fundamental object describing particle motion is the \emph{propagator} or Green's function $D(x-y)$. It represents the probability amplitude for a particle to travel from spacetime point $y$ to $x$.
+
+Consider a free scalar field $\phi(x)$ governed by the Klein--Gordon equation:
+\[
+  (\Box + m^2)\phi(x) = 0, \quad \text{where } \Box = \partial_\mu \partial^\mu = \frac{\partial^2}{\partial t^2} - \nabla^2.
+\]
+The differential operator $\hat{O} = \Box + m^2$ is translation-invariant, so its "eigenvectors" are the Fourier modes $e^{-ik \cdot x}$ (plane waves) with eigenvalues $-k^2 + m^2$, where $k^2 = (k^0)^2 - |\mathbf{k}|^2$.
+
+The propagator $D(x-y)$ is the inverse of this operator, formally $\hat{O}^{-1}$. Using the spectral decomposition in momentum space (the continuous analog of matrix diagonalization), we write the inverse operator as an integral over the inverse eigenvalues:
+\[
+  D(x-y) = \int \frac{d^4k}{(2\pi)^4} \frac{e^{-ik \cdot (x-y)}}{m^2 - k^2 - i\epsilon}.
+\]
+Here, the term $i\epsilon$ is a regularization parameter that shifts the poles of the integrand off the real axis, defining how the contour integral is performed. This choice corresponds to the \emph{Feynman propagator}, which enforces causality: particles propagate forward in time, and antiparticles propagate backward.
+
+\begin{center}
+  \begin{tikzpicture}[scale=1.2]
+    % Axes
+    \draw[->] (-3,0) -- (3,0) node[right] {$\operatorname{Re}(k^0)$};
+    \draw[->] (0,-2) -- (0,2) node[above] {$\operatorname{Im}(k^0)$};
+
+    % Poles
+    \fill[red] (-1.5, 0.1) circle (2pt) node[above] {$-\omega_k + i\epsilon$};
+    \fill[red] (1.5, -0.1) circle (2pt) node[below] {$+\omega_k - i\epsilon$};
+
+    % Contour
+    \draw[blue, thick, decoration={markings, mark=at position 0.2 with {\arrow{>}}, mark=at position 0.7 with {\arrow{>}}}, postaction={decorate}] (-2.5,0) -- (-1.8,0) arc (180:360:0.3) -- (1.2,0) arc (180:0:0.3) -- (2.5,0);
+
+    \node at (0, -2.5) {Poles in the complex $k^0$ plane (Feynman contour)};
+  \end{tikzpicture}
+\end{center}
+
+Physically, this integral implies that a field excitation is a superposition of all possible momentum states, weighted by how close they are to the "mass shell" condition $k^2 = m^2$. The resonance at $k^2 \approx m^2$ dominates macroscopic propagation.
+
+\subsubsection{Stress-Energy Tensor in General Relativity}
+The stress-energy tensor $T_{\mu\nu}$ is a symmetric tensor capturing energy and momentum density.
+Einstein's equations link geometry to matter: $G_{\mu\nu} = 8\pi G T_{\mu\nu}$.
+Because $T_{\mu\nu}$ is symmetric, at any point in spacetime, one can find a local Lorentz frame (eigenbasis) where $T_{\mu\nu}$ is diagonal.
+For a perfect fluid, this gives $T_{\mu\nu} = \operatorname{diag}(\rho, p, p, p)$, representing energy density $\rho$ and pressure $p$. This simplifies the study of stars and cosmology.
 
 \section{Singular Value Decomposition}
 
@@ -648,6 +727,34 @@ The spectral theorem applies only to symmetric matrices. The Singular Value Deco
   Since $\mathbf{V}$ is orthogonal, $\mathbf{V}^{\mathsf{T}}\mathbf{V} = \mathbf{I}_n$, so $\mathbf{A} = \mathbf{U}\mathbf{\Sigma}\mathbf{V}^{\mathsf{T}}$.
 \end{proof}
 
+\begin{center}
+  \begin{tikzpicture}[scale=0.6]
+    % V^T: Rotation
+    \begin{scope}[xshift=0cm]
+      \draw[->] (-1.5,0) -- (1.5,0);
+      \draw[->] (0,-1.5) -- (0,1.5);
+      \draw[thick] (0,0) circle (1cm);
+      \draw[->, blue, thick] (0,0) -- (1,0) node[right] {$\mathbf{v}_1$};
+      \draw[->, red, thick] (0,0) -- (0,1) node[above] {$\mathbf{v}_2$};
+      \node at (0,-2.5) {$\mathbf{x}$ (Unit Circle)};
+    \end{scope}
+
+    \draw[->, thick] (2,0) -- (4,0) node[midway, above] {$\mathbf{A}$};
+
+    % U Sigma: Final Ellipse
+    \begin{scope}[xshift=6cm]
+      \draw[->] (-2.5,0) -- (2.5,0);
+      \draw[->] (0,-2.5) -- (0,2.5);
+      \draw[thick, rotate=30] (0,0) ellipse (2cm and 0.8cm);
+      \draw[->, blue, thick, rotate=30] (0,0) -- (2,0) node[right] {$\sigma_1 \mathbf{u}_1$};
+      \draw[->, red, thick, rotate=30] (0,0) -- (0,0.8) node[above] {$\sigma_2 \mathbf{u}_2$};
+      \node at (0,-2.5) {$\mathbf{Ax}$ (Ellipse)};
+    \end{scope}
+
+    \node at (3,-3.5) {Decomposition: Rotate ($\mathbf{V}^{\mathsf{T}}$) $\to$ Stretch ($\mathbf{\Sigma}$) $\to$ Rotate ($\mathbf{U}$)};
+  \end{tikzpicture}
+\end{center}
+
 \begin{remark}[Thin SVD]
   For computational purposes, we often use the \emph{thin} (or \emph{reduced}) SVD. If $m \geq n$ and $\operatorname{rank}(\mathbf{A}) = r$, write
   \[
@@ -683,16 +790,25 @@ The spectral theorem applies only to symmetric matrices. The Singular Value Deco
   \]
 \end{proof}
 
-\begin{remark}[Applications of SVD]
-  SVD is one of the most versatile tools in numerical linear algebra:
-  \begin{itemize}
-    \item \textbf{Low-rank approximation}: The best rank-$k$ approximation to $\mathbf{A}$ in Frobenius norm is $\mathbf{A}_k = \sum_{i=1}^{k} \sigma_i \mathbf{u}_i \mathbf{v}_i^{\mathsf{T}}$ (Eckart-Young theorem).
-    \item \textbf{Pseudoinverse}: The Moore-Penrose pseudoinverse is $\mathbf{A}^+ = \mathbf{V}\mathbf{\Sigma}^+\mathbf{U}^{\mathsf{T}}$, used for solving least-squares problems.
-    \item \textbf{Data compression}: Images, videos, and signals can be compressed by keeping only the largest singular values.
-    \item \textbf{Numerical stability}: SVD-based algorithms are numerically robust and reveal the conditioning of a matrix through the ratio $\sigma_1/\sigma_r$ (condition number).
-    \item \textbf{Recommender systems}: Collaborative filtering uses SVD to factorize user-item rating matrices, discovering latent factors.
-  \end{itemize}
-\end{remark}
+\subsection{Applications of Singular Value Decomposition}
+
+\subsubsection{Low-Rank Matrix Approximation (Image Compression)}
+The Eckart-Young theorem states that the best rank-$k$ approximation to a matrix $\mathbf{A}$ (in the Frobenius norm sense) is given by the truncated SVD:
+\[
+  \mathbf{A}_k = \sum_{i=1}^{k} \sigma_i \mathbf{u}_i \mathbf{v}_i^{\mathsf{T}}.
+\]
+This property is fundamental to lossy data compression. Consider a grayscale image represented as a matrix $\mathbf{A} \in \mathbb{R}^{m \times n}$. By computing the SVD and storing only the first $k$ singular values and corresponding singular vectors, we can reconstruct the image with an approximation error of $\sum_{i=k+1}^{\min(m,n)} \sigma_i^2$.
+
+For large matrices, $k \ll \min(m,n)$ is often sufficient to capture the visual structure. The storage requirement drops from $mn$ entries to $k(m+n+1)$, yielding significant compression ratios.
+
+\subsubsection{The Moore-Penrose Pseudoinverse}
+For a system of linear equations $\mathbf{A}\mathbf{x} = \mathbf{b}$, if $\mathbf{A}$ is not invertible (e.g., rectangular or singular), there is no unique solution. The \emph{pseudoinverse} $\mathbf{A}^+$ provides the "best" solution in a least-squares sense.
+
+Using the SVD $\mathbf{A} = \mathbf{U}\mathbf{\Sigma}\mathbf{V}^{\mathsf{T}}$, the pseudoinverse is defined as:
+\[
+  \mathbf{A}^+ = \mathbf{V}\mathbf{\Sigma}^+\mathbf{U}^{\mathsf{T}},
+\]
+where $\mathbf{\Sigma}^+$ is obtained by taking the reciprocal of non-zero singular values and transposing the matrix. The solution $\mathbf{x}^* = \mathbf{A}^+\mathbf{b}$ minimizes $\|\mathbf{A}\mathbf{x} - \mathbf{b}\|_2$, and among all such minimizers, it has the smallest norm $\|\mathbf{x}\|_2$. This is widely used in solving ill-posed inverse problems in physics and engineering.
 
 \section{Principal Component Analysis}
 
@@ -705,6 +821,27 @@ Principal Component Analysis (PCA) solves a fundamental geometric problem: given
   \min_{\substack{S \subseteq \mathbb{R}^d \\ \dim(S) = k}} \sum_{i=1}^{N} \operatorname{dist}(\mathbf{x}_i, S)^2,
 \end{equation}
 where $\operatorname{dist}(\mathbf{x}, S) := \inf_{\mathbf{y} \in S} \|\mathbf{x} - \mathbf{y}\|_2$ is the distance from $\mathbf{x}$ to $S$.
+
+\begin{center}
+  \begin{tikzpicture}[scale=0.8]
+    \draw[->] (-3,0) -- (3,0) node[right] {$x_1$};
+    \draw[->] (0,-3) -- (0,3) node[above] {$x_2$};
+
+    % Ellipse of data
+    \draw[rotate=30, blue!20, fill=blue!5] (0,0) ellipse (2.5 and 0.8);
+
+    % Principal axes
+    \draw[->, thick, blue, -latex, rotate=30] (0,0) -- (2.5,0) node[right] {$\mathbf{u}_1$};
+    \draw[->, thick, red, -latex, rotate=30] (0,0) -- (0,0.8) node[above] {$\mathbf{u}_2$};
+
+    % Random points (simulated)
+    \foreach \x/\y in {1.5/1, 2/1.5, -1/-0.2, -2/-1.5, 0.5/0.8, -0.5/-0.5, 1.2/0.9, -1.8/-0.8} {
+        \fill[black] (\x,\y) circle (2pt);
+      }
+
+    \node at (0,-4) {PCA finds directions of maximum variance ($\mathbf{u}_1$)};
+  \end{tikzpicture}
+\end{center}
 
 \subsection{Parametrizing Subspaces via Orthonormal Bases}
 
@@ -768,8 +905,27 @@ Thus we can optimize over matrices $\mathbf{W} \in \mathbb{R}^{d \times k}$ with
 \begin{remark}
   The matrix $\mathbf{P} = \mathbf{W}\mathbf{W}^{\mathsf{T}} \in \mathbb{R}^{d \times d}$ is the orthogonal projection onto $S$. It is symmetric, idempotent ($\mathbf{P}^2 = \mathbf{P}$), and has rank $k$.
   The coordinate vector of $\widehat{\mathbf{x}}$ in the basis given by columns of $\mathbf{W}$ is $\mathbf{z}^* = \mathbf{W}^{\mathsf{T}}\mathbf{x} \in \mathbb{R}^k$.
-\end{remark}
 
+  \begin{center}
+    \begin{tikzpicture}[scale=1.5]
+      % Plane
+      \fill[blue!10] (-2,-0.5) -- (2,-0.5) -- (2.5,1) -- (-1.5,1) -- cycle;
+      \node[blue] at (2.3,0) {$S$};
+
+      % Vectors
+      \coordinate (O) at (0,0);
+      \coordinate (X) at (1,1.5);
+      \coordinate (P) at (1,0.2);
+
+      \draw[->, thick, -latex] (O) -- (X) node[right] {$\mathbf{x}$};
+      \draw[->, thick, -latex, blue] (O) -- (P) node[below] {$\widehat{\mathbf{x}} = \mathbf{WW}^{\mathsf{T}}\mathbf{x}$};
+      \draw[dashed, red, thick] (X) -- (P) node[midway, right] {$\mathbf{x} - \widehat{\mathbf{x}}$};
+
+      % Origin
+      \filldraw (O) circle (1pt) node[below left] {$\mathbf{0}$};
+    \end{tikzpicture}
+  \end{center}
+\end{remark}
 \subsection{The Matrix Optimization Problem}
 
 \begin{definition}[Sample covariance matrix]
@@ -969,42 +1125,33 @@ Thus we can optimize over matrices $\mathbf{W} \in \mathbb{R}^{d \times k}$ with
   The variance explained by the first $k$ components is $\frac{\sum_{i=1}^{k}\lambda_i}{\sum_{i=1}^{d}\lambda_i}$.
 \end{corollary}
 
-\begin{remark}[Applications of PCA]
-  PCA is one of the most widely used techniques in data science and scientific computing:
-  \begin{itemize}
-    \item \textbf{Machine learning}:
-          \begin{itemize}
-            \item \textbf{Dimensionality reduction}: Images are high-dimensional (e.g., $256 \times 256 = 65{,}536$ dimensions), but natural images lie near a low-dimensional manifold. PCA compresses images to $\sim$100 dimensions with minimal information loss, enabling faster training and visualization.
-            \item \textbf{Feature engineering}: In recommendation systems, PCA transforms sparse user-item matrices into dense low-dimensional embeddings (latent factors) that capture user preferences and item characteristics.
-            \item \textbf{Preprocessing}: Removing correlations between features via PCA whitening improves convergence of gradient-based optimization in neural networks.
-            \item \textbf{Anomaly detection}: Data points with large reconstruction error $\|\mathbf{x} - \mathbf{W}\mathbf{W}^{\mathsf{T}}\mathbf{x}\|^2$ lie far from the principal subspace, indicating outliers or anomalies.
-          \end{itemize}
+\subsection{Applications of Principal Component Analysis}
 
-    \item \textbf{Computer vision}:
-          \begin{itemize}
-            \item \textbf{Eigenfaces}: PCA on face images produces "eigenfaces" (principal components). Any face can be reconstructed as a weighted sum of eigenfaces, enabling face recognition with $\sim$50 dimensions instead of millions.
-            \item \textbf{Object tracking}: Background subtraction uses PCA to model the background subspace, allowing detection of moving objects as outliers.
-          \end{itemize}
+\subsubsection{Dimensionality Reduction in Images (Eigenfaces)}
+Natural images, such as faces, are high-dimensional data points. A $256 \times 256$ grayscale image corresponds to a vector $\mathbf{x} \in \mathbb{R}^{65536}$. However, the space of "valid" face images is a much lower-dimensional manifold within this huge space.
 
-    \item \textbf{Bioinformatics}:
-          \begin{itemize}
-            \item \textbf{Genomics}: Gene expression data has thousands of genes (dimensions) but few samples. PCA identifies principal axes of variation, revealing biological pathways and disease subtypes.
-            \item \textbf{Population genetics}: PCA on genetic markers separates populations by ancestry. The first two principal components often correspond to geographic coordinates, reconstructing human migration patterns.
-          \end{itemize}
+PCA identifies the principal directions of variation in the dataset of face images. The eigenvectors $\mathbf{u}_1, \dots, \mathbf{u}_k$ of the covariance matrix are called \emph{eigenfaces}. They represent the fundamental "ghost-like" features (such as lighting direction, face shape, or pose) from which any specific face can be constructed.
 
-    \item \textbf{Physics}:
-          \begin{itemize}
-            \item \textbf{Statistical mechanics}: PCA identifies collective modes in molecular dynamics simulations, revealing slow degrees of freedom in protein folding or phase transitions.
-            \item \textbf{Climate science}: PCA on temperature/pressure fields extracts dominant patterns like El Niño or the North Atlantic Oscillation from high-dimensional spatio-temporal data.
-          \end{itemize}
+By keeping only the top $k \approx 100$ eigenfaces, we can compress the image $\mathbf{x}$ into a coefficient vector $\mathbf{z} \in \mathbb{R}^{100}$:
+\[
+  \mathbf{z} = \mathbf{W}^{\mathsf{T}}(\mathbf{x} - \boldsymbol{\mu}),
+\]
+where $\boldsymbol{\mu}$ is the mean face and $\mathbf{W} = [\mathbf{u}_1 \mid \dots \mid \mathbf{u}_k]$. The reconstruction $\widehat{\mathbf{x}} = \boldsymbol{\mu} + \mathbf{W}\mathbf{z}$ preserves the essential facial features while discarding noise and minor variations, achieving a compression ratio of over 600:1.
 
-    \item \textbf{Theoretical physics}:
-          \begin{itemize}
-            \item \textbf{Lattice field theory}: PCA-like methods compress lattice configurations in quantum chromodynamics, identifying relevant field modes for hadron structure calculations.
-            \item \textbf{Many-body quantum systems}: Reduced density matrices are diagonalized (a PCA-like operation) to compute entanglement entropy and identify emergent degrees of freedom.
-          \end{itemize}
+\subsubsection{Feature Engineering in Recommender Systems}
+In a recommender system, we have a sparse user-item interaction matrix $\mathbf{R} \in \mathbb{R}^{N \times M}$, where $R_{ij}$ represents the rating user $i$ gives to item $j$. The goal is to predict missing ratings.
 
-    \item \textbf{Signal processing}: PCA separates signal from noise by projecting onto the subspace with largest variance (signal-dominated), discarding low-variance directions (noise-dominated).
-  \end{itemize}
-  \textbf{Key insight}: High-dimensional data often has low intrinsic dimensionality due to correlations. PCA finds the optimal low-dimensional representation by maximizing variance (information retention) while minimizing dimensions (computational efficiency). The spectral theorem guarantees this optimal representation exists and is computable.
-\end{remark}
+PCA (or more precisely, SVD-based matrix factorization) transforms this sparse matrix into dense low-dimensional embeddings. We assume that user preferences depend on a small number of latent factors (e.g., for movies: "action vs. drama", "serious vs. comedy").
+
+By approximating the matrix $\mathbf{R}$ with a rank-$k$ matrix, we map each user $i$ to a vector $\mathbf{p}_i \in \mathbb{R}^k$ and each item $j$ to a vector $\mathbf{q}_j \in \mathbb{R}^k$ such that
+\[
+  R_{ij} \approx \mathbf{p}_i^{\mathsf{T}}\mathbf{q}_j.
+\]
+These latent vectors capture semantic similarities: users with similar $\mathbf{p}$ vectors share tastes, and items with similar $\mathbf{q}$ vectors are semantically related, enabling the system to recommend items that align with the user's latent preferences.
+
+\subsubsection{Genomics and Population Genetics}
+In genomics, the data matrix $\mathbf{X}$ consists of Single Nucleotide Polymorphisms (SNPs) for $N$ individuals across $d$ genetic markers (often $d \gg N$).
+
+PCA is applied to this matrix to visualize population structure. The first two principal components often reveal geographic ancestry. For example, when applied to European populations, the projection of individuals onto the plane spanned by the first two principal components remarkably reconstructs the map of Europe, with individuals clustering by their country of origin. This indicates that geography is the dominant factor explaining genetic variation.
+
+
