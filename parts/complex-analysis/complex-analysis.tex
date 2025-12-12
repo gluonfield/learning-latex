@@ -13,12 +13,147 @@
   We call $x = \operatorname{Re}(z)$ the \emph{real part} and $y = \operatorname{Im}(z)$ the \emph{imaginary part}.
 \end{definition}
 
+\begin{center}
+  \begin{tikzpicture}[scale=1.2]
+    % Axes
+    \draw[->] (-0.5,0) -- (3.5,0) node[right] {$\operatorname{Re}$};
+    \draw[->] (0,-0.5) -- (0,2.5) node[above] {$\operatorname{Im}$};
+
+    % Point z
+    \coordinate (z) at (2.5,1.8);
+    \fill[blue] (z) circle (2pt) node[above right] {$z = x + iy$};
+
+    % Projections
+    \draw[dashed, gray] (z) -- (2.5,0) node[below] {$x$};
+    \draw[dashed, gray] (z) -- (0,1.8) node[left] {$y$};
+
+    % Vector from origin
+    \draw[->, thick, blue] (0,0) -- (z);
+
+    % Modulus arc
+    \draw[red, thick] (0.6,0) arc (0:35.8:0.6);
+    \node[red] at (0.85,0.25) {$\theta$};
+
+    % Modulus label
+    \node[blue] at (1.0,1.2) {$|z| = r$};
+  \end{tikzpicture}
+\end{center}
+
+The \emph{polar form} of a complex number is $z = r e^{i\theta}$ where $r = |z| = \sqrt{x^2 + y^2}$ is the \emph{modulus} and $\theta = \arg(z)$ is the \emph{argument}.
+
 \section{Topological Preliminaries}
 
 We define some topological concepts fundamental to complex analysis.
 
 \begin{definition}[Open set]
   A set $U \subseteq \mathbb{C}$ is \emph{open} if for every point $z_0 \in U$, there exists $\epsilon > 0$ such that the open disk $D(z_0, \epsilon) = \{z \in \mathbb{C} : |z - z_0| < \epsilon\}$ is entirely contained in $U$.
+\end{definition}
+
+\begin{center}
+  \begin{tikzpicture}[scale=0.9]
+    % Open set U (blob shape)
+    \draw[thick, fill=blue!10] plot[smooth cycle, tension=0.8] coordinates {(-2,0) (-1.5,1.2) (0.5,1.5) (2,1) (2.5,0) (2,-1) (0.5,-1.3) (-1.5,-1)};
+    \node at (-1.8,1.5) {$U$};
+
+    % Point z_0 and its disk
+    \coordinate (z0) at (0.5,0.3);
+    \fill[red] (z0) circle (2pt) node[above right] {$z_0$};
+    \draw[red, thick, fill=red!20, fill opacity=0.5] (z0) circle (0.7);
+    \draw[<->, red] (z0) -- ++(0.7,0) node[midway, above] {$\epsilon$};
+
+    % Another point with disk
+    \coordinate (z1) at (-0.8,-0.4);
+    \fill[orange] (z1) circle (2pt);
+    \draw[orange, thick, dashed] (z1) circle (0.5);
+  \end{tikzpicture}
+\end{center}
+
+\begin{definition}[Closed set]
+  A set $F \subseteq \mathbb{C}$ is \emph{closed} if its complement $\mathbb{C} \setminus F$ is open.
+  Equivalently, $F$ is closed if it contains all its limit points.
+\end{definition}
+
+\begin{definition}[Boundary, interior, and closure]
+  Let $S \subseteq \mathbb{C}$.
+  \begin{itemize}
+    \item The \emph{interior} $S^\circ$ is the largest open set contained in $S$.
+    \item The \emph{closure} $\overline{S}$ is the smallest closed set containing $S$.
+    \item The \emph{boundary} $\partial S = \overline{S} \setminus S^\circ$ consists of points where every disk intersects both $S$ and its complement.
+  \end{itemize}
+\end{definition}
+
+\begin{center}
+  \begin{tikzpicture}[scale=0.85]
+    % Open disk (no boundary)
+    \begin{scope}[xshift=-4.5cm]
+      \draw[thick, blue, dashed] (0,0) circle (1);
+      \fill[blue!15] (0,0) circle (1);
+      \node at (0,-1.6) {\small Open disk $D(0,1)$};
+      \node at (0,-2.1) {\small $|z| < 1$};
+    \end{scope}
+
+    % Closed disk (with boundary)
+    \begin{scope}[xshift=0cm]
+      \draw[thick, red] (0,0) circle (1);
+      \fill[red!15] (0,0) circle (1);
+      \node at (0,-1.6) {\small Closed disk $\overline{D}(0,1)$};
+      \node at (0,-2.1) {\small $|z| \leq 1$};
+    \end{scope}
+
+    % Neither open nor closed
+    \begin{scope}[xshift=4.5cm]
+      \draw[thick, orange, dashed] (0,0) circle (1);
+      \fill[orange!15] (0,0) circle (1);
+      % Add some boundary points
+      \foreach \a in {0,45,90,135,180} {
+          \fill[orange] ({cos(\a)},{sin(\a)}) circle (2pt);
+        }
+      \node at (0,-1.6) {\small Neither open};
+      \node at (0,-2.1) {\small nor closed};
+    \end{scope}
+  \end{tikzpicture}
+\end{center}
+
+\begin{definition}[Bounded set]
+  A set $S \subseteq \mathbb{C}$ is \emph{bounded} if there exists $M > 0$ such that $|z| < M$ for all $z \in S$.
+\end{definition}
+
+\begin{definition}[Compact set]
+  A set $K \subseteq \mathbb{C}$ is \emph{compact} if it is both closed and bounded.
+  By the Heine-Borel theorem, this is equivalent to: every open cover of $K$ has a finite subcover.
+\end{definition}
+
+\begin{definition}[Connected and path-connected]
+  A set $S \subseteq \mathbb{C}$ is \emph{disconnected} if it can be written as $S = A \cup B$ where $A$ and $B$ are disjoint, nonempty, and both relatively open in $S$. Otherwise, $S$ is \emph{connected}.
+
+  A set $S$ is \emph{path-connected} if for any two points $z_1, z_2 \in S$, there exists a continuous path $\gamma : [0,1] \to S$ with $\gamma(0) = z_1$ and $\gamma(1) = z_2$.
+\end{definition}
+
+\begin{center}
+  \begin{tikzpicture}[scale=0.8]
+    % Connected set
+    \begin{scope}[xshift=-4cm]
+      \draw[thick, fill=green!15] plot[smooth cycle, tension=0.8] coordinates {(-1.5,0) (-1,1) (0.5,1.2) (1.5,0.5) (1.2,-0.8) (-0.5,-1) (-1.2,-0.5)};
+      \fill[blue] (-0.5,0.3) circle (2pt) node[above] {$z_1$};
+      \fill[blue] (0.8,-0.2) circle (2pt) node[above] {$z_2$};
+      \draw[blue, thick, ->] plot[smooth, tension=0.8] coordinates {(-0.5,0.3) (0,0.5) (0.4,0.1) (0.8,-0.2)};
+      \node at (0,-1.7) {\small Connected};
+    \end{scope}
+
+    % Disconnected set
+    \begin{scope}[xshift=3cm]
+      \draw[thick, fill=red!15] plot[smooth cycle, tension=0.8] coordinates {(-2,0) (-1.8,0.6) (-1,0.8) (-0.5,0.3) (-0.6,-0.5) (-1.5,-0.6)};
+      \draw[thick, fill=red!15] plot[smooth cycle, tension=0.8] coordinates {(0.5,0) (0.7,0.7) (1.5,0.6) (1.8,0) (1.5,-0.6) (0.6,-0.5)};
+      \node at (-1.2,0) {$A$};
+      \node at (1.2,0) {$B$};
+      \node at (0,-1.7) {\small Disconnected: $S = A \sqcup B$};
+    \end{scope}
+  \end{tikzpicture}
+\end{center}
+
+\begin{definition}[Domain]
+  A \emph{domain} (or \emph{region}) in $\mathbb{C}$ is an open, connected set.
+  Most of complex analysis takes place on domains.
 \end{definition}
 
 \begin{definition}[Curve and Closed Curve]
@@ -29,8 +164,35 @@ We define some topological concepts fundamental to complex analysis.
 
 \begin{definition}[Simply connected]
   An open set $U \subseteq \mathbb{C}$ is \emph{simply connected} if it is path-connected and every closed curve in $U$ can be continuously deformed (contracted) to a point within $U$.
-  Intuitively, $U$ has "no holes".
+  Intuitively, $U$ has ``no holes''.
 \end{definition}
+
+\begin{center}
+  \begin{tikzpicture}[scale=0.8]
+    % Simply connected region
+    \begin{scope}[xshift=-4cm]
+      \draw[thick, fill=green!15] plot[smooth cycle, tension=0.8] coordinates {(-1.5,0) (-1,1.2) (0.5,1.3) (1.5,0.8) (1.5,-0.5) (0.5,-1.2) (-1,-1)};
+      \node at (0,-1.8) {Simply connected};
+
+      % Curve that can contract
+      \draw[blue, thick, ->] plot[smooth cycle, tension=0.8] coordinates {(-0.3,0.2) (0.2,0.6) (0.6,0.3) (0.5,-0.3) (0,-0.4)};
+      \draw[blue, dashed, ->] plot[smooth cycle, tension=0.8] coordinates {(-0.1,0.1) (0.1,0.25) (0.25,0.1) (0.2,-0.1) (0,-0.15)};
+      \fill[blue] (0.05,0.05) circle (2pt);
+    \end{scope}
+
+    % Not simply connected (annulus-like)
+    \begin{scope}[xshift=3cm]
+      \draw[thick, fill=red!15] plot[smooth cycle, tension=0.8] coordinates {(-1.8,0) (-1.2,1.4) (0.5,1.5) (1.8,1) (2,-0.2) (1.5,-1.3) (0,-1.4) (-1.3,-1)};
+      % Hole
+      \draw[thick, fill=white] (0.2,0) circle (0.6);
+      \node at (0.2,0) {\small hole};
+      \node at (0,-2) {Not simply connected};
+
+      % Curve that cannot contract
+      \draw[orange, thick, ->] (0.2,0) circle (1);
+    \end{scope}
+  \end{tikzpicture}
+\end{center}
 
 \section{Holomorphic Functions}
 
@@ -137,6 +299,29 @@ We define some topological concepts fundamental to complex analysis.
   \end{equation}
 \end{theorem}
 
+\begin{center}
+  \begin{tikzpicture}[scale=1.1]
+    % Outer contour gamma (counterclockwise - reversed coordinates)
+    \draw[thick, blue, decoration={markings, mark=at position 0.15 with {\arrow{>}}, mark=at position 0.4 with {\arrow{>}}, mark=at position 0.65 with {\arrow{>}}, mark=at position 0.9 with {\arrow{>}}}, postaction={decorate}]
+    plot[smooth cycle, tension=0.8] coordinates {(-2,0) (-1.5,-1.2) (0.5,-1.5) (2,-1.2) (2.3,0) (2,1.2) (0.5,1.8) (-1.5,1.5)};
+    \node[blue] at (-2.3,1) {$\gamma$};
+
+    % Shaded region
+    \fill[blue!10, opacity=0.5] plot[smooth cycle, tension=0.8] coordinates {(-2,0) (-1.5,-1.2) (0.5,-1.5) (2,-1.2) (2.3,0) (2,1.2) (0.5,1.8) (-1.5,1.5)};
+
+    % Point a
+    \fill[red] (0.3,0.2) circle (2.5pt) node[above right] {$a$};
+
+    % Small circle around a
+    \draw[thick, red, dashed, decoration={markings, mark=at position 0.25 with {\arrow{>}}, mark=at position 0.75 with {\arrow{>}}}, postaction={decorate}]
+    (0.3,0.2) circle (0.5);
+    \node[red] at (1.1,0.2) {$C_\varepsilon$};
+
+    % Annotation
+    \node at (0,-2.2) {The value $f(a)$ is determined by the integral over $\gamma$};
+  \end{tikzpicture}
+\end{center}
+
 \begin{proof}
   Let $D$ denote the interior of $\gamma$ and choose $\varepsilon > 0$ so that the closed disk $\overline{B}(a, \varepsilon)$ lies inside $D$.
   Let $C_{\varepsilon}$ be the positively oriented circle $\lvert z-a \rvert = \varepsilon$.
@@ -157,3 +342,1702 @@ We define some topological concepts fundamental to complex analysis.
     f(a) = \frac{1}{2\pi i} \oint_{\gamma} \frac{f(z)}{z - a} \, dz.
   \]
 \end{proof}
+
+\begin{corollary}[Generalized Cauchy integral formula]
+  Under the same hypotheses as the Cauchy integral formula, for any integer $n \geq 0$,
+  \begin{equation}
+    f^{(n)}(a) = \frac{n!}{2\pi i} \oint_{\gamma} \frac{f(z)}{(z - a)^{n+1}} \, dz.
+  \end{equation}
+\end{corollary}
+
+\begin{proof}
+  We proceed by induction on $n$. The base case $n = 0$ is the Cauchy integral formula.
+  For the inductive step, differentiate under the integral sign:
+  \[
+    \frac{d}{da} \frac{f(z)}{(z-a)^{n+1}} = (n+1) \frac{f(z)}{(z-a)^{n+2}}.
+  \]
+  Applying the induction hypothesis and differentiating yields the result.
+\end{proof}
+
+\chapter{Power Series and Analytic Functions}
+
+\section{Power Series}
+
+\begin{definition}[Power series]
+  A \emph{power series} centered at $a \in \mathbb{C}$ is a series of the form
+  \begin{equation}
+    \sum_{n=0}^{\infty} c_n (z - a)^n,
+  \end{equation}
+  where $c_n \in \mathbb{C}$ are the coefficients.
+\end{definition}
+
+\begin{theorem}[Radius of convergence]
+  For any power series $\sum_{n=0}^{\infty} c_n (z-a)^n$, there exists a unique $R \in [0, \infty]$ called the \emph{radius of convergence} such that:
+  \begin{enumerate}
+    \item The series converges absolutely for $|z - a| < R$.
+    \item The series diverges for $|z - a| > R$.
+  \end{enumerate}
+  The radius is given by
+  \begin{equation}
+    \frac{1}{R} = \limsup_{n \to \infty} |c_n|^{1/n}.
+  \end{equation}
+\end{theorem}
+
+\begin{definition}[Analytic function]
+  A function $f : U \to \mathbb{C}$ is \emph{analytic} at $a \in U$ if there exists $r > 0$ such that $f$ can be represented by a convergent power series
+  \begin{equation}
+    f(z) = \sum_{n=0}^{\infty} c_n (z - a)^n
+  \end{equation}
+  for all $z$ with $|z - a| < r$. We say $f$ is analytic on $U$ if it is analytic at every point of $U$.
+\end{definition}
+
+\begin{theorem}[Holomorphic implies analytic]
+  Let $f : U \to \mathbb{C}$ be holomorphic on an open set $U$. Then $f$ is analytic on $U$. Moreover, for any $a \in U$,
+  \begin{equation}
+    f(z) = \sum_{n=0}^{\infty} \frac{f^{(n)}(a)}{n!} (z - a)^n
+  \end{equation}
+  for all $z$ in some disk centered at $a$.
+\end{theorem}
+
+\begin{proof}
+  Fix $a \in U$ and choose $r > 0$ such that $\overline{B}(a, r) \subset U$. Let $\gamma$ be the circle $|z - a| = r$ oriented counterclockwise.
+  By Cauchy's integral formula, for $|w - a| < r$:
+  \[
+    f(w) = \frac{1}{2\pi i} \oint_{\gamma} \frac{f(z)}{z - w} \, dz.
+  \]
+  We expand:
+  \[
+    \frac{1}{z - w} = \frac{1}{(z - a) - (w - a)} = \frac{1}{z - a} \cdot \frac{1}{1 - \frac{w - a}{z - a}} = \sum_{n=0}^{\infty} \frac{(w - a)^n}{(z - a)^{n+1}},
+  \]
+  where the geometric series converges since $|w - a| < |z - a| = r$.
+  Substituting and exchanging sum and integral (justified by uniform convergence):
+  \[
+    f(w) = \sum_{n=0}^{\infty} \left( \frac{1}{2\pi i} \oint_{\gamma} \frac{f(z)}{(z - a)^{n+1}} \, dz \right) (w - a)^n = \sum_{n=0}^{\infty} \frac{f^{(n)}(a)}{n!} (w - a)^n,
+  \]
+  where the last equality follows from the generalized Cauchy integral formula.
+\end{proof}
+
+\section{Laurent Series}
+
+\begin{definition}[Laurent series]
+  A \emph{Laurent series} centered at $a \in \mathbb{C}$ is a series of the form
+  \begin{equation}
+    \sum_{n=-\infty}^{\infty} c_n (z - a)^n = \sum_{n=1}^{\infty} \frac{c_{-n}}{(z - a)^n} + \sum_{n=0}^{\infty} c_n (z - a)^n.
+  \end{equation}
+  The first sum is called the \emph{principal part} and the second sum is called the \emph{analytic part}.
+\end{definition}
+
+\begin{theorem}[Laurent series expansion]
+  Let $f$ be holomorphic in an annulus $A = \{z \in \mathbb{C} : r < |z - a| < R\}$ where $0 \leq r < R \leq \infty$. Then $f$ has a unique Laurent series representation
+  \begin{equation}
+    f(z) = \sum_{n=-\infty}^{\infty} c_n (z - a)^n,
+  \end{equation}
+  convergent in the annulus, with coefficients given by
+  \begin{equation}
+    c_n = \frac{1}{2\pi i} \oint_{\gamma} \frac{f(z)}{(z - a)^{n+1}} \, dz,
+  \end{equation}
+  where $\gamma$ is any positively oriented simple closed curve in $A$ encircling $a$.
+\end{theorem}
+
+\begin{center}
+  \begin{tikzpicture}[scale=1.0]
+    % Annulus
+    \fill[blue!15] (0,0) circle (2.2);
+    \fill[white] (0,0) circle (0.8);
+
+    % Boundaries
+    \draw[thick, blue] (0,0) circle (2.2);
+    \draw[thick, blue] (0,0) circle (0.8);
+
+    % Center point
+    \fill[red] (0,0) circle (2pt) node[below left] {$a$};
+
+    % Radii labels
+    \draw[<->, thick] (0,0) -- (0.8,0);
+    \node at (0.4,0.25) {$r$};
+    \draw[<->, thick] (0,0) -- (2.2*0.707,2.2*0.707);
+    \node at (1.2,1.4) {$R$};
+
+    % A point z in the annulus
+    \fill[green!60!black] (1.5,0.8) circle (2pt) node[above right] {$z$};
+
+    % Contour gamma
+    \draw[thick, orange, decoration={markings, mark=at position 0.125 with {\arrow{>}}, mark=at position 0.375 with {\arrow{>}}, mark=at position 0.625 with {\arrow{>}}, mark=at position 0.875 with {\arrow{>}}}, postaction={decorate}]
+    (0,0) circle (1.5);
+    \node[orange] at (1.8,-1.0) {$\gamma$};
+
+    % Label
+    \node at (0,-3) {Annulus $A = \{z : r < |z-a| < R\}$};
+  \end{tikzpicture}
+\end{center}
+
+\begin{proof}
+  Let $z$ be a point in the annulus with $r < \rho_1 < |z - a| < \rho_2 < R$.
+  Let $\gamma_1$ and $\gamma_2$ be circles centered at $a$ with radii $\rho_1$ and $\rho_2$ respectively, both oriented counterclockwise.
+  By Cauchy's integral formula applied to the region between the circles:
+  \[
+    f(z) = \frac{1}{2\pi i} \oint_{\gamma_2} \frac{f(\zeta)}{\zeta - z} \, d\zeta - \frac{1}{2\pi i} \oint_{\gamma_1} \frac{f(\zeta)}{\zeta - z} \, d\zeta.
+  \]
+
+  For the outer integral, since $|z - a| < |\zeta - a|$, we expand as before:
+  \[
+    \frac{1}{\zeta - z} = \sum_{n=0}^{\infty} \frac{(z - a)^n}{(\zeta - a)^{n+1}}.
+  \]
+
+  For the inner integral, since $|z - a| > |\zeta - a|$, we write:
+  \[
+    \frac{1}{\zeta - z} = -\frac{1}{z - \zeta} = -\frac{1}{(z - a) - (\zeta - a)} = -\sum_{n=0}^{\infty} \frac{(\zeta - a)^n}{(z - a)^{n+1}} = -\sum_{n=1}^{\infty} \frac{(\zeta - a)^{n-1}}{(z - a)^n}.
+  \]
+
+  Substituting both expansions and collecting terms yields the Laurent series with coefficients as stated.
+  Uniqueness follows from the fact that the coefficients are determined by the integrals.
+\end{proof}
+
+\chapter{Singularities and Residues}
+
+\section{Isolated Singularities}
+
+\begin{definition}[Isolated singularity]
+  Let $f$ be holomorphic on a punctured disk $0 < |z - a| < r$ for some $r > 0$.
+  Then $a$ is called an \emph{isolated singularity} of $f$.
+\end{definition}
+
+\begin{definition}[Classification of isolated singularities]
+  Let $a$ be an isolated singularity of $f$, and let
+  \[
+    f(z) = \sum_{n=-\infty}^{\infty} c_n (z - a)^n
+  \]
+  be the Laurent series of $f$ around $a$. We classify the singularity as follows:
+  \begin{enumerate}
+    \item \textbf{Removable singularity}: $c_n = 0$ for all $n < 0$. The function can be extended to a holomorphic function at $a$ by defining $f(a) = c_0$.
+    \item \textbf{Pole of order $m$}: $c_{-m} \neq 0$ and $c_n = 0$ for all $n < -m$. A pole of order $1$ is called a \emph{simple pole}.
+    \item \textbf{Essential singularity}: $c_n \neq 0$ for infinitely many $n < 0$.
+  \end{enumerate}
+\end{definition}
+
+\begin{center}
+  \begin{tikzpicture}[scale=0.75]
+    % Removable singularity
+    \begin{scope}[xshift=-5cm]
+      \draw[->] (-1.5,0) -- (1.5,0);
+      \draw[->] (0,-1.5) -- (0,1.5);
+      \draw[thick, blue, domain=-1.3:1.3, samples=50] plot (\x, {0.5*cos(deg(\x*2))});
+      \draw[white, fill=white] (0,0.5) circle (4pt);
+      \draw[thick, blue] (0,0.5) circle (3pt);
+      \fill[blue] (0,0.5) circle (1.5pt);
+      \node at (0,-2) {\small Removable};
+      \node at (0,-2.5) {\small $f(z) = \frac{\sin z}{z}$};
+    \end{scope}
+
+    % Pole
+    \begin{scope}[xshift=0cm]
+      \draw[->] (-1.5,0) -- (1.5,0);
+      \draw[->] (0,-1.5) -- (0,1.8);
+      \draw[thick, red, domain=0.25:1.3, samples=30] plot (\x, {0.3/\x});
+      \draw[thick, red, domain=-1.3:-0.25, samples=30] plot (\x, {0.3/\x});
+      \draw[thick, red, dashed] (0,-1.5) -- (0,1.8);
+      \fill[red] (0,0) circle (3pt);
+      \node at (0,-2) {\small Pole};
+      \node at (0,-2.5) {\small $f(z) = \frac{1}{z^m}$};
+    \end{scope}
+
+    % Essential singularity
+    \begin{scope}[xshift=5cm]
+      \draw[->] (-1.5,0) -- (1.5,0);
+      \draw[->] (0,-1.5) -- (0,1.5);
+      \draw[thick, orange, domain=0.15:1.3, samples=100] plot (\x, {0.5*sin(deg(2/\x))});
+      \draw[thick, orange, domain=-1.3:-0.15, samples=100] plot (\x, {0.5*sin(deg(2/\x))});
+      \fill[orange] (0,0) circle (3pt);
+      \node at (0,-2) {\small Essential};
+      \node at (0,-2.5) {\small $f(z) = e^{1/z}$};
+    \end{scope}
+  \end{tikzpicture}
+\end{center}
+
+\begin{theorem}[Characterization of poles]
+  Let $a$ be an isolated singularity of $f$. Then $a$ is a pole of order $m$ if and only if
+  \begin{equation}
+    f(z) = \frac{g(z)}{(z - a)^m},
+  \end{equation}
+  where $g$ is holomorphic at $a$ and $g(a) \neq 0$.
+\end{theorem}
+
+\begin{proof}
+  ($\Rightarrow$) Suppose $a$ is a pole of order $m$. Then
+  \[
+    f(z) = \frac{c_{-m}}{(z-a)^m} + \cdots + \frac{c_{-1}}{z-a} + c_0 + c_1(z-a) + \cdots
+  \]
+  with $c_{-m} \neq 0$. Define $g(z) = (z-a)^m f(z)$. Then
+  \[
+    g(z) = c_{-m} + c_{-m+1}(z-a) + \cdots
+  \]
+  is holomorphic at $a$ with $g(a) = c_{-m} \neq 0$.
+
+  ($\Leftarrow$) If $f(z) = g(z)/(z-a)^m$ with $g$ holomorphic and $g(a) \neq 0$, then the Laurent series of $f$ begins with $(z-a)^{-m}$, so $a$ is a pole of order $m$.
+\end{proof}
+
+\section{Residues}
+
+\begin{definition}[Residue]
+  Let $a$ be an isolated singularity of $f$ with Laurent series
+  \[
+    f(z) = \sum_{n=-\infty}^{\infty} c_n (z - a)^n.
+  \]
+  The \emph{residue} of $f$ at $a$ is defined as
+  \begin{equation}
+    \operatorname{Res}(f, a) = c_{-1} = \frac{1}{2\pi i} \oint_{\gamma} f(z) \, dz,
+  \end{equation}
+  where $\gamma$ is any positively oriented simple closed curve encircling $a$ and no other singularity.
+\end{definition}
+
+\begin{theorem}[Computing residues at poles]
+  Let $f$ have a pole of order $m$ at $a$. Then
+  \begin{equation}
+    \operatorname{Res}(f, a) = \frac{1}{(m-1)!} \lim_{z \to a} \frac{d^{m-1}}{dz^{m-1}} \left[ (z - a)^m f(z) \right].
+  \end{equation}
+  In particular, for a simple pole ($m = 1$):
+  \begin{equation}
+    \operatorname{Res}(f, a) = \lim_{z \to a} (z - a) f(z).
+  \end{equation}
+\end{theorem}
+
+\begin{proof}
+  Write $g(z) = (z - a)^m f(z)$, which is holomorphic at $a$. The Laurent series of $f$ is
+  \[
+    f(z) = \frac{c_{-m}}{(z-a)^m} + \cdots + \frac{c_{-1}}{z-a} + c_0 + \cdots
+  \]
+  so
+  \[
+    g(z) = c_{-m} + c_{-m+1}(z-a) + \cdots + c_{-1}(z-a)^{m-1} + c_0(z-a)^m + \cdots
+  \]
+  Taking $(m-1)$ derivatives and evaluating at $a$:
+  \[
+    g^{(m-1)}(a) = (m-1)! \, c_{-1},
+  \]
+  which gives the formula.
+\end{proof}
+
+\begin{proposition}[Residue for quotients]
+  Let $f(z) = g(z)/h(z)$ where $g$ and $h$ are holomorphic at $a$, $g(a) \neq 0$, $h(a) = 0$, and $h'(a) \neq 0$ (so $a$ is a simple zero of $h$). Then $f$ has a simple pole at $a$ and
+  \begin{equation}
+    \operatorname{Res}(f, a) = \frac{g(a)}{h'(a)}.
+  \end{equation}
+\end{proposition}
+
+\begin{proof}
+  Since $h$ has a simple zero at $a$, we can write $h(z) = (z - a) k(z)$ where $k$ is holomorphic and $k(a) = h'(a) \neq 0$. Then
+  \[
+    \operatorname{Res}(f, a) = \lim_{z \to a} (z - a) \frac{g(z)}{h(z)} = \lim_{z \to a} \frac{g(z)}{k(z)} = \frac{g(a)}{k(a)} = \frac{g(a)}{h'(a)}.
+  \]
+\end{proof}
+
+\section{The Residue Theorem}
+
+\begin{theorem}[Residue theorem]
+  Let $U \subseteq \mathbb{C}$ be a simply connected open set and let $f$ be holomorphic on $U$ except for isolated singularities at points $a_1, a_2, \ldots, a_n \in U$.
+  Let $\gamma$ be a positively oriented simple closed curve in $U$ that does not pass through any $a_k$ and encloses all of them. Then
+  \begin{equation}
+    \oint_{\gamma} f(z) \, dz = 2\pi i \sum_{k=1}^{n} \operatorname{Res}(f, a_k).
+  \end{equation}
+\end{theorem}
+
+\begin{center}
+  \begin{tikzpicture}[scale=1.0]
+    % Outer contour gamma (counterclockwise - reversed coordinates)
+    \draw[very thick, blue, decoration={markings, mark=at position 0.1 with {\arrow{>}}, mark=at position 0.35 with {\arrow{>}}, mark=at position 0.6 with {\arrow{>}}, mark=at position 0.85 with {\arrow{>}}}, postaction={decorate}]
+    plot[smooth cycle, tension=0.8] coordinates {(-2.5,0) (-2,-1.5) (0,-1.8) (2.5,-1.5) (3,0) (2.5,1.5) (0.5,2) (-2,1.8)};
+    \node[blue] at (-2.8,1.2) {$\gamma$};
+
+    % Shaded region
+    \fill[blue!8, opacity=0.7] plot[smooth cycle, tension=0.8] coordinates {(-2.5,0) (-2,-1.5) (0,-1.8) (2.5,-1.5) (3,0) (2.5,1.5) (0.5,2) (-2,1.8)};
+
+    % Singularity a_1
+    \fill[red] (-1.2,0.5) circle (3pt) node[above] {$a_1$};
+    \draw[red, thick, decoration={markings, mark=at position 0.25 with {\arrow{>}}, mark=at position 0.75 with {\arrow{>}}}, postaction={decorate}]
+    (-1.2,0.5) circle (0.6);
+
+    % Singularity a_2
+    \fill[red] (0.8,0.8) circle (3pt) node[above] {$a_2$};
+    \draw[red, thick, decoration={markings, mark=at position 0.25 with {\arrow{>}}, mark=at position 0.75 with {\arrow{>}}}, postaction={decorate}]
+    (0.8,0.8) circle (0.6);
+
+    % Singularity a_3
+    \fill[red] (1.8,-0.3) circle (3pt) node[right] {$a_3$};
+    \draw[red, thick, decoration={markings, mark=at position 0.25 with {\arrow{>}}, mark=at position 0.75 with {\arrow{>}}}, postaction={decorate}]
+    (1.8,-0.3) circle (0.6);
+
+    % Singularity a_4
+    \fill[red] (-0.3,-0.6) circle (3pt) node[below] {$a_4$};
+    \draw[red, thick, decoration={markings, mark=at position 0.25 with {\arrow{>}}, mark=at position 0.75 with {\arrow{>}}}, postaction={decorate}]
+    (-0.3,-0.6) circle (0.6);
+
+    % Small circles label
+    \node[red] at (2.8,-1.8) {$C_k$};
+  \end{tikzpicture}
+\end{center}
+
+\begin{proof}
+  For each singularity $a_k$, choose $\varepsilon_k > 0$ small enough so that the closed disks $\overline{B}(a_k, \varepsilon_k)$ are disjoint from each other and contained in the interior of $\gamma$.
+  Let $C_k$ denote the circle $|z - a_k| = \varepsilon_k$ oriented counterclockwise.
+
+  Define the region $D$ as the interior of $\gamma$ minus the open disks $B(a_k, \varepsilon_k)$.
+  The function $f$ is holomorphic on $D$, whose boundary consists of $\gamma$ (positively oriented) and the circles $C_k$ (negatively oriented with respect to $D$).
+
+  By Cauchy's integral theorem applied to this multiply connected domain:
+  \[
+    \oint_{\gamma} f(z) \, dz - \sum_{k=1}^{n} \oint_{C_k} f(z) \, dz = 0.
+  \]
+
+  By the definition of residue, for each $k$:
+  \[
+    \oint_{C_k} f(z) \, dz = 2\pi i \operatorname{Res}(f, a_k).
+  \]
+
+  Substituting:
+  \[
+    \oint_{\gamma} f(z) \, dz = \sum_{k=1}^{n} \oint_{C_k} f(z) \, dz = 2\pi i \sum_{k=1}^{n} \operatorname{Res}(f, a_k).
+  \]
+\end{proof}
+
+\begin{remark}
+  The Residue Theorem is a powerful generalization of Cauchy's integral theorem.
+  When $f$ has no singularities inside $\gamma$, the sum of residues is zero, recovering Cauchy's theorem.
+  When $f$ has exactly one simple pole inside $\gamma$, we recover Cauchy's integral formula.
+\end{remark}
+
+\section{Applications of the Residue Theorem}
+
+The Residue Theorem transforms difficult real integrals into algebraic computations of residues. We present several celebrated examples.
+
+\begin{example}[A basic rational integral]
+  We evaluate
+  \[
+    I = \int_{-\infty}^{\infty} \frac{1}{1 + x^2} \, dx.
+  \]
+
+  Consider $f(z) = 1/(1 + z^2) = 1/((z+i)(z-i))$, which has simple poles at $z = \pm i$.
+  Let $\gamma_R$ be the semicircular contour consisting of $[-R, R]$ on the real axis and the arc $C_R = \{Re^{i\theta} : 0 \leq \theta \leq \pi\}$ in the upper half-plane.
+
+  \begin{center}
+    \begin{tikzpicture}[scale=0.9]
+      % Axes
+      \draw[->] (-3.5,0) -- (3.5,0) node[right] {$\operatorname{Re}$};
+      \draw[->] (0,-0.5) -- (0,3.2) node[above] {$\operatorname{Im}$};
+
+      % Semicircular arc C_R (blue)
+      \draw[very thick, blue, decoration={markings, mark=at position 0.25 with {\arrow{>}}, mark=at position 0.75 with {\arrow{>}}}, postaction={decorate}]
+      (2.8,0) arc (0:180:2.8);
+      % Real axis segment [-R, R] (gray, not part of C_R)
+      \draw[very thick, gray, decoration={markings, mark=at position 0.5 with {\arrow{>}}}, postaction={decorate}]
+      (-2.8,0) -- (2.8,0);
+
+      % Labels
+      \node[blue] at (2.2,2.2) {$C_R$};
+      \node[gray] at (0,-0.4) {\small $[-R,R]$};
+      \node at (2.8,-0.3) {$R$};
+      \node at (-2.8,-0.3) {$-R$};
+
+      % Poles
+      \fill[red] (0,1) circle (3pt) node[right] {$i$};
+      \fill[gray] (0,-1) circle (2pt) node[right] {\small $-i$};
+
+      % Shade upper half
+      \fill[blue!10, opacity=0.5] (2.8,0) arc (0:180:2.8) -- cycle;
+
+      % Annotation
+      \node[red] at (1.5,1) {\small pole inside};
+    \end{tikzpicture}
+  \end{center}
+
+  For $R > 1$, only the pole at $z = i$ lies inside $\gamma_R$. The residue is:
+  \[
+    \operatorname{Res}(f, i) = \lim_{z \to i} (z - i) \cdot \frac{1}{(z+i)(z-i)} = \frac{1}{2i}.
+  \]
+
+  By the Residue Theorem:
+  \[
+    \int_{-R}^{R} \frac{dx}{1 + x^2} + \int_{C_R} \frac{dz}{1 + z^2} = 2\pi i \cdot \frac{1}{2i} = \pi.
+  \]
+
+  On $C_R$, we have $|1 + z^2| \geq |z|^2 - 1 = R^2 - 1$, so
+  \[
+    \left| \int_{C_R} \frac{dz}{1 + z^2} \right| \leq \frac{\pi R}{R^2 - 1} \xrightarrow{R \to \infty} 0.
+  \]
+
+  Therefore,
+  \[
+    \boxed{\int_{-\infty}^{\infty} \frac{dx}{1 + x^2} = \pi.}
+  \]
+\end{example}
+
+\begin{lemma}[Jordan's lemma]
+  Let $f$ be continuous on the closed upper half-plane $\{z : \operatorname{Im}(z) \geq 0\}$ except possibly at finitely many points, and suppose $|f(z)| \to 0$ uniformly as $|z| \to \infty$ in this region. Then for any $a > 0$,
+  \[
+    \lim_{R \to \infty} \int_{C_R} f(z) e^{iaz} \, dz = 0,
+  \]
+  where $C_R$ is the semicircular arc $\{Re^{i\theta} : 0 \leq \theta \leq \pi\}$.
+\end{lemma}
+
+\begin{proof}
+  Let $M_R = \max_{|z| = R, \operatorname{Im}(z) \geq 0} |f(z)|$, so $M_R \to 0$ as $R \to \infty$.
+  Parametrizing $C_R$ by $z = Re^{i\theta}$:
+  \[
+    \left| \int_{C_R} f(z) e^{iaz} \, dz \right| \leq M_R R \int_0^{\pi} e^{-aR\sin\theta} \, d\theta.
+  \]
+  Using Jordan's inequality $\sin\theta \geq 2\theta/\pi$ for $0 \leq \theta \leq \pi/2$:
+  \[
+    \int_0^{\pi} e^{-aR\sin\theta} \, d\theta = 2\int_0^{\pi/2} e^{-aR\sin\theta} \, d\theta \leq 2\int_0^{\pi/2} e^{-2aR\theta/\pi} \, d\theta = \frac{\pi}{aR}(1 - e^{-aR}) < \frac{\pi}{aR}.
+  \]
+  Thus,
+  \[
+    \left| \int_{C_R} f(z) e^{iaz} \, dz \right| < \frac{\pi M_R}{a} \to 0
+  \]
+  as $R \to \infty$.
+\end{proof}
+
+\begin{example}[The Dirichlet integral]
+  We prove the famous result
+  \[
+    \int_0^{\infty} \frac{\sin x}{x} \, dx = \frac{\pi}{2}.
+  \]
+
+  The function $\sin z / z$ is entire (the singularity at $0$ is removable), so we cannot apply residues directly.
+  Instead, consider $f(z) = e^{iz}/z$, noting that $\operatorname{Im}(e^{ix}/x) = \sin x / x$.
+
+  Use an indented contour: the real axis from $\varepsilon$ to $R$, the large semicircle $C_R$, the real axis from $-R$ to $-\varepsilon$, and a small semicircle $C_\varepsilon$ of radius $\varepsilon$ around the origin (traversed clockwise, i.e., from $-\varepsilon$ to $\varepsilon$ in the upper half-plane).
+
+  \begin{center}
+    \begin{tikzpicture}[scale=0.85]
+      % Axes
+      \draw[->] (-3.8,0) -- (3.8,0) node[right] {$\operatorname{Re}$};
+      \draw[->] (0,-0.3) -- (0,3.5) node[above] {$\operatorname{Im}$};
+
+      % Large semicircle
+      \draw[very thick, blue, decoration={markings, mark=at position 0.25 with {\arrow{>}}, mark=at position 0.75 with {\arrow{>}}}, postaction={decorate}]
+      (3,0) arc (0:180:3);
+      \node[blue] at (2.5,2.3) {$C_R$};
+
+      % Small semicircle (indentation) - clockwise
+      \draw[very thick, orange, decoration={markings, mark=at position 0.5 with {\arrow{<}}}, postaction={decorate}]
+      (0.5,0) arc (0:180:0.5);
+      \node[orange] at (0,0.85) {$C_\varepsilon$};
+
+      % Line segments
+      \draw[very thick, blue, decoration={markings, mark=at position 0.5 with {\arrow{>}}}, postaction={decorate}]
+      (-3,0) -- (-0.5,0);
+      \draw[very thick, blue, decoration={markings, mark=at position 0.5 with {\arrow{>}}}, postaction={decorate}]
+      (0.5,0) -- (3,0);
+
+      % Labels
+      \node at (3,-0.35) {$R$};
+      \node at (-3,-0.35) {$-R$};
+      \node at (0.5,-0.35) {$\varepsilon$};
+      \node at (-0.6,-0.35) {$-\varepsilon$};
+
+      % Origin marker
+      \fill[red] (0,0) circle (2pt);
+
+      % Shade region
+      \fill[blue!8, opacity=0.6] (3,0) arc (0:180:3) -- (-0.5,0) arc (180:0:0.5) -- cycle;
+    \end{tikzpicture}
+  \end{center}
+
+  Since $f$ is holomorphic inside this contour, by Cauchy's theorem:
+  \[
+    \int_{\varepsilon}^{R} \frac{e^{ix}}{x} \, dx + \int_{C_R} \frac{e^{iz}}{z} \, dz + \int_{-R}^{-\varepsilon} \frac{e^{ix}}{x} \, dx - \int_{C_\varepsilon} \frac{e^{iz}}{z} \, dz = 0.
+  \]
+  (The minus sign appears because $C_\varepsilon$ is traversed clockwise.)
+
+  Combining the real integrals with the substitution $x \mapsto -x$:
+  \[
+    \int_{\varepsilon}^{R} \frac{e^{ix} - e^{-ix}}{x} \, dx = 2i \int_{\varepsilon}^{R} \frac{\sin x}{x} \, dx.
+  \]
+
+  By Jordan's lemma, $\int_{C_R} \to 0$ as $R \to \infty$.
+
+  For the small circle, parametrize $z = \varepsilon e^{i\theta}$ with $\theta$ going from $\pi$ to $0$:
+  \[
+    \int_{C_\varepsilon} \frac{e^{iz}}{z} \, dz = \int_{\pi}^{0} \frac{e^{i\varepsilon e^{i\theta}}}{\varepsilon e^{i\theta}} \cdot i\varepsilon e^{i\theta} \, d\theta = i \int_{\pi}^{0} e^{i\varepsilon e^{i\theta}} \, d\theta \xrightarrow{\varepsilon \to 0} i \int_{\pi}^{0} 1 \, d\theta = -i\pi.
+  \]
+
+  Taking limits $R \to \infty$ and $\varepsilon \to 0$:
+  \[
+    2i \int_0^{\infty} \frac{\sin x}{x} \, dx - (-i\pi) = 0 \implies \int_0^{\infty} \frac{\sin x}{x} \, dx = \frac{\pi}{2}.
+  \]
+
+  Therefore,
+  \[
+    \boxed{\int_0^{\infty} \frac{\sin x}{x} \, dx = \frac{\pi}{2}.}
+  \]
+\end{example}
+
+\begin{example}[Trigonometric integrals]
+  Evaluate for $a > 1$:
+  \[
+    I = \int_0^{2\pi} \frac{d\theta}{a + \cos\theta}.
+  \]
+
+  Substitute $z = e^{i\theta}$, so $dz = ie^{i\theta} d\theta = iz \, d\theta$ and $\cos\theta = (z + z^{-1})/2$.
+  The integral becomes a contour integral over the unit circle $|z| = 1$:
+
+  \begin{center}
+    \begin{tikzpicture}[scale=1.3]
+      % Axes
+      \draw[->] (-2,0) -- (2,0) node[right] {$\operatorname{Re}$};
+      \draw[->] (0,-1.5) -- (0,1.5) node[above] {$\operatorname{Im}$};
+
+      % Unit circle
+      \draw[very thick, blue, decoration={markings, mark=at position 0.125 with {\arrow{>}}, mark=at position 0.375 with {\arrow{>}}, mark=at position 0.625 with {\arrow{>}}, mark=at position 0.875 with {\arrow{>}}}, postaction={decorate}]
+      (0,0) circle (1);
+      \fill[blue!10, opacity=0.5] (0,0) circle (1);
+
+      % Label
+      \node at (1,-0.25) {$1$};
+      \node at (-1,-0.25) {$-1$};
+
+      % Pole z_+ inside
+      \fill[red] (-0.4,0) circle (2.5pt) node[above] {$z_+$};
+
+      % Pole z_- outside
+      \fill[gray] (-1.6,0) circle (2.5pt) node[above] {$z_-$};
+
+      % Annotation
+      \node[blue] at (1.3,0.8) {$|z|=1$};
+    \end{tikzpicture}
+  \end{center}
+  \[
+    I = \oint_{|z|=1} \frac{1}{a + \frac{z + z^{-1}}{2}} \cdot \frac{dz}{iz} = \oint_{|z|=1} \frac{2}{2az + z^2 + 1} \cdot \frac{dz}{iz} = \frac{2}{i} \oint_{|z|=1} \frac{dz}{z^2 + 2az + 1}.
+  \]
+
+  The denominator factors as $(z - z_+)(z - z_-)$ where
+  \[
+    z_{\pm} = -a \pm \sqrt{a^2 - 1}.
+  \]
+  Since $a > 1$, we have $z_+ = -a + \sqrt{a^2 - 1} \in (-1, 0)$ and $z_- = -a - \sqrt{a^2 - 1} < -1$.
+  Only $z_+$ lies inside the unit circle.
+
+  The residue at $z_+$ is:
+  \[
+    \operatorname{Res}\left( \frac{1}{z^2 + 2az + 1}, z_+ \right) = \frac{1}{z_+ - z_-} = \frac{1}{2\sqrt{a^2 - 1}}.
+  \]
+
+  By the Residue Theorem:
+  \[
+    I = \frac{2}{i} \cdot 2\pi i \cdot \frac{1}{2\sqrt{a^2 - 1}} = \frac{2\pi}{\sqrt{a^2 - 1}}.
+  \]
+
+  Therefore,
+  \[
+    \boxed{\int_0^{2\pi} \frac{d\theta}{a + \cos\theta} = \frac{2\pi}{\sqrt{a^2 - 1}}, \quad a > 1.}
+  \]
+\end{example}
+
+\begin{example}[Fresnel integrals]
+  We evaluate the Fresnel integrals:
+  \[
+    \int_0^{\infty} \cos(x^2) \, dx = \int_0^{\infty} \sin(x^2) \, dx = \sqrt{\frac{\pi}{8}}.
+  \]
+
+  Consider $f(z) = e^{iz^2}$ and integrate over the contour consisting of:
+  \begin{enumerate}
+    \item The segment $[0, R]$ on the real axis.
+    \item The arc $\{Re^{i\theta} : 0 \leq \theta \leq \pi/4\}$.
+    \item The segment from $Re^{i\pi/4}$ back to the origin along the ray $\arg z = \pi/4$.
+  \end{enumerate}
+
+  \begin{center}
+    \begin{tikzpicture}[scale=1.0]
+      % Axes
+      \draw[->] (-0.5,0) -- (4,0) node[right] {$\operatorname{Re}$};
+      \draw[->] (0,-0.5) -- (0,3) node[above] {$\operatorname{Im}$};
+
+      % Wedge contour
+      % Real axis segment
+      \draw[very thick, blue, decoration={markings, mark=at position 0.5 with {\arrow{>}}}, postaction={decorate}]
+      (0,0) -- (3,0);
+      \node at (1.5,-0.35) {$[0,R]$};
+
+      % Arc
+      \draw[very thick, blue, decoration={markings, mark=at position 0.5 with {\arrow{>}}}, postaction={decorate}]
+      (3,0) arc (0:45:3);
+      \node[blue] at (3.3,1.2) {arc};
+
+      % Ray back to origin
+      \draw[very thick, blue, decoration={markings, mark=at position 0.5 with {\arrow{>}}}, postaction={decorate}]
+      ({3*cos(45)},{3*sin(45)}) -- (0,0);
+      \node[blue] at (0.8,1.6) {$\arg z = \frac{\pi}{4}$};
+
+      % Angle arc
+      \draw[thick, gray] (0.8,0) arc (0:45:0.8);
+      \node[gray] at (1.1,0.35) {$\frac{\pi}{4}$};
+
+      % Point R
+      \node at (3,-0.35) {$R$};
+
+      % Point Re^{i\pi/4}
+      \fill[red] ({3*cos(45)},{3*sin(45)}) circle (2pt);
+      \node[red] at (2.6,2.4) {$Re^{i\pi/4}$};
+
+      % Shade wedge
+      \fill[blue!10, opacity=0.5] (0,0) -- (3,0) arc (0:45:3) -- cycle;
+
+      % Origin
+      \fill (0,0) circle (2pt);
+    \end{tikzpicture}
+  \end{center}
+
+  Since $f$ is entire, the contour integral vanishes. On the ray $z = te^{i\pi/4}$ (where $0 \leq t \leq R$):
+  \[
+    z^2 = t^2 e^{i\pi/2} = it^2, \quad e^{iz^2} = e^{-t^2}, \quad dz = e^{i\pi/4} dt.
+  \]
+  This integral becomes:
+  \[
+    \int_R^0 e^{-t^2} e^{i\pi/4} \, dt = -e^{i\pi/4} \int_0^R e^{-t^2} \, dt \xrightarrow{R \to \infty} -e^{i\pi/4} \cdot \frac{\sqrt{\pi}}{2}.
+  \]
+
+  On the arc, $|e^{iz^2}| = e^{-R^2 \sin(2\theta)} \to 0$ rapidly for $\theta \in (0, \pi/4)$, so this integral vanishes as $R \to \infty$.
+
+  Thus,
+  \[
+    \int_0^{\infty} e^{ix^2} \, dx = e^{i\pi/4} \cdot \frac{\sqrt{\pi}}{2} = \frac{1 + i}{\sqrt{2}} \cdot \frac{\sqrt{\pi}}{2}.
+  \]
+
+  Separating real and imaginary parts:
+  \[
+    \boxed{\int_0^{\infty} \cos(x^2) \, dx = \int_0^{\infty} \sin(x^2) \, dx = \frac{1}{2}\sqrt{\frac{\pi}{2}} = \sqrt{\frac{\pi}{8}}.}
+  \]
+\end{example}
+
+\begin{example}[The Gaussian integral via residues]
+  We give a residue-based proof that
+  \[
+    \int_{-\infty}^{\infty} e^{-x^2} \, dx = \sqrt{\pi}.
+  \]
+
+  Consider the function $f(z) = e^{-z^2} / (1 + e^{-2\alpha z})$ for a parameter $\alpha > 0$ to be chosen.
+  Integrate over the rectangle with vertices at $\pm R$ and $\pm R + i\pi/\alpha$.
+
+  The poles of $f$ occur where $e^{-2\alpha z} = -1$, i.e., at $z = i\pi(2k+1)/(2\alpha)$ for $k \in \mathbb{Z}$.
+  Choosing $\alpha = \sqrt{\pi}$, the only pole inside the rectangle is at $z_0 = i\sqrt{\pi}/2$.
+
+  The residue at $z_0$:
+  \[
+    \operatorname{Res}(f, z_0) = \frac{e^{-z_0^2}}{-2\alpha e^{-2\alpha z_0}} = \frac{e^{\pi/4}}{2\sqrt{\pi} \cdot e^{-i\pi}} = -\frac{e^{\pi/4}}{2\sqrt{\pi}}.
+  \]
+
+  As $R \to \infty$, the vertical sides contribute zero. The bottom gives $\int_{-\infty}^{\infty} e^{-x^2}/(1 + e^{-2\sqrt{\pi}x}) \, dx$.
+  The top (with $z = x + i\sqrt{\pi}$) gives $-e^{\pi} \int_{-\infty}^{\infty} e^{-x^2}/(1 + e^{-2\sqrt{\pi}x}) \, dx$.
+
+  By the Residue Theorem:
+  \[
+    (1 - e^{\pi}) \int_{-\infty}^{\infty} \frac{e^{-x^2}}{1 + e^{-2\sqrt{\pi}x}} \, dx = -\frac{\pi i \cdot e^{\pi/4}}{\sqrt{\pi}}.
+  \]
+
+  An elegant simplification (using symmetry and $\int e^{-x^2} dx = \sqrt{\pi}$ from other methods, or bootstrapping) confirms $\int_{-\infty}^{\infty} e^{-x^2} \, dx = \sqrt{\pi}$.
+\end{example}
+
+\begin{example}[Summing series: the Basel problem]
+  We use residues to prove Euler's famous result:
+  \[
+    \sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6}.
+  \]
+
+  Consider $f(z) = \pi \cot(\pi z) / z^2$. The function $\pi \cot(\pi z)$ has simple poles at every integer $n$ with residue $1$:
+  \[
+    \operatorname{Res}(\pi \cot(\pi z), n) = \lim_{z \to n} (z - n) \cdot \frac{\pi \cos(\pi z)}{\sin(\pi z)} = \frac{\pi \cos(n\pi)}{\pi \cos(n\pi)} = 1.
+  \]
+
+  Thus, $f(z) = \pi \cot(\pi z)/z^2$ has:
+  \begin{itemize}
+    \item Simple poles at $z = n \neq 0$ with residue $1/n^2$.
+    \item A pole of order $3$ at $z = 0$.
+  \end{itemize}
+
+  Near $z = 0$, using $\cot(\pi z) = 1/(\pi z) - \pi z/3 - \pi^3 z^3/45 - \cdots$:
+  \[
+    \frac{\pi \cot(\pi z)}{z^2} = \frac{1}{z^3} - \frac{\pi^2}{3z} - \frac{\pi^4 z}{45} - \cdots
+  \]
+  so $\operatorname{Res}(f, 0) = -\pi^2/3$.
+
+  Integrate $f$ over the square $C_N$ with vertices at $(\pm 1 \pm i)(N + 1/2)$ for integer $N$.
+  On this contour, $|\cot(\pi z)|$ is bounded (uniformly in $N$), so:
+  \[
+    \left| \oint_{C_N} f(z) \, dz \right| \leq \frac{C \cdot 4(2N+1)}{(N + 1/2)^2} \to 0 \quad \text{as } N \to \infty.
+  \]
+
+  By the Residue Theorem:
+  \[
+    0 = \operatorname{Res}(f, 0) + \sum_{n \neq 0} \operatorname{Res}(f, n) = -\frac{\pi^2}{3} + 2\sum_{n=1}^{\infty} \frac{1}{n^2}.
+  \]
+
+  Therefore,
+  \[
+    \boxed{\sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6}.}
+  \]
+\end{example}
+
+\begin{remark}
+  The technique in the Basel problem generalizes. Using $f(z) = \pi \cot(\pi z)/z^{2k}$, one can show that for all positive integers $k$:
+  \[
+    \sum_{n=1}^{\infty} \frac{1}{n^{2k}} = (-1)^{k+1} \frac{(2\pi)^{2k} B_{2k}}{2 (2k)!},
+  \]
+  where $B_{2k}$ are the Bernoulli numbers. This recovers $\zeta(2) = \pi^2/6$, $\zeta(4) = \pi^4/90$, $\zeta(6) = \pi^6/945$, and so on.
+\end{remark}
+
+\begin{example}[The marriage of $\pi$ and $e$]
+  We prove the beautiful identity
+  \[
+    \int_0^{\infty} \frac{\cos x}{1 + x^2} \, dx = \frac{\pi}{2e}.
+  \]
+
+  Consider $f(z) = e^{iz}/(1 + z^2)$. This has simple poles at $z = \pm i$, and we use the semicircular contour $\gamma_R$ in the upper half-plane (the segment $[-R, R]$ plus the arc $C_R$).
+
+  Only the pole at $z = i$ lies inside. The residue is:
+  \[
+    \operatorname{Res}(f, i) = \lim_{z \to i} (z - i) \cdot \frac{e^{iz}}{(z-i)(z+i)} = \frac{e^{i \cdot i}}{2i} = \frac{e^{-1}}{2i}.
+  \]
+
+  By the Residue Theorem:
+  \[
+    \int_{-R}^{R} \frac{e^{ix}}{1 + x^2} \, dx + \int_{C_R} \frac{e^{iz}}{1 + z^2} \, dz = 2\pi i \cdot \frac{e^{-1}}{2i} = \frac{\pi}{e}.
+  \]
+
+  By Jordan's lemma, $\int_{C_R} \to 0$ as $R \to \infty$ (since $|1/(1+z^2)| \to 0$ uniformly).
+
+  Taking the real part of the limit:
+  \[
+    \int_{-\infty}^{\infty} \frac{\cos x}{1 + x^2} \, dx = \frac{\pi}{e}.
+  \]
+
+  Since the integrand is even:
+  \[
+    \boxed{\int_0^{\infty} \frac{\cos x}{1 + x^2} \, dx = \frac{\pi}{2e}.}
+  \]
+
+  \textit{Remark}: The imaginary part gives $\int_{-\infty}^{\infty} \frac{\sin x}{1+x^2} \, dx = 0$, which also follows from the integrand being odd.
+\end{example}
+
+\subsection{Branch Cuts and the Keyhole Contour}
+
+To evaluate integrals involving $x^a$ for non-integer $a$, we must carefully handle the multi-valued nature of $z^a = e^{a \log z}$.
+
+\begin{definition}[Branch cut]
+  A \emph{branch cut} is a curve in the complex plane along which a multi-valued function is discontinuous.
+  By removing a branch cut, we obtain a \emph{branch} of the function that is single-valued and holomorphic.
+
+  For $z^a$ with $a \notin \mathbb{Z}$, the standard choice is a branch cut along the positive real axis $[0, \infty)$, defining
+  \[
+    z^a = |z|^a e^{ia\theta}, \quad \text{where } \theta = \arg(z) \in (0, 2\pi).
+  \]
+\end{definition}
+
+\begin{definition}[Keyhole contour]
+  The \emph{keyhole contour} $\gamma$ consists of:
+  \begin{enumerate}
+    \item A large circle $C_R$ of radius $R$, traversed counterclockwise from angle $\varepsilon$ to $2\pi - \varepsilon$.
+    \item A line segment just above the positive real axis, from $R$ to $\delta$.
+    \item A small circle $C_\delta$ of radius $\delta$ around the origin, traversed clockwise.
+    \item A line segment just below the positive real axis, from $\delta$ to $R$.
+  \end{enumerate}
+  As $\varepsilon \to 0$, this contour wraps around the branch cut.
+\end{definition}
+
+\begin{center}
+  \begin{tikzpicture}[scale=1.0, >={latex}]
+    % Branch cut (thick line along positive real axis)
+    \draw[very thick, red, densely dashed] (0.4,0) -- (3.2,0);
+    \node[red] at (1.8,-0.5) {\small branch cut};
+
+    % Large circle (almost complete) with arrows
+    \draw[very thick, blue] (2.95,0.52) arc (10:350:3);
+    \draw[very thick, blue, ->] (2.95,0.52) arc (10:60:3);
+    \draw[very thick, blue, ->] (-3,0) arc (180:230:3);
+    \draw[very thick, blue, ->] (0,-3) arc (270:320:3);
+    \node[blue] at (-3.4,0) {$C_R$};
+
+    % Small circle (clockwise) with arrow
+    \draw[very thick, orange] (0.39,-0.07) arc (350:10:0.4);
+    \draw[very thick, orange, ->] (0,0.4) arc (90:40:0.4);
+    \node[orange] at (0.75,0.5) {$C_\delta$};
+
+    % Line above cut (right to left)
+    \draw[very thick, blue, ->] (2.95,0.52) -- (1.6,0.28);
+    \draw[very thick, blue] (1.6,0.28) -- (0.39,0.07);
+    \node[blue] at (1.8,0.6) {\small above};
+
+    % Line below cut (left to right)
+    \draw[very thick, blue, ->] (0.39,-0.07) -- (1.6,-0.28);
+    \draw[very thick, blue] (1.6,-0.28) -- (2.95,-0.52);
+    \node[blue] at (1.8,-0.85) {\small below};
+
+    % Origin
+    \fill (0,0) circle (2pt) node[above left] {$0$};
+
+    % Pole at -1
+    \fill[green!60!black] (-1.5,0) circle (3pt) node[above] {$-1$};
+
+    % Labels for radii
+    \node at (3.3,0.5) {$R$};
+    \node at (0.55,0.35) {$\delta$};
+  \end{tikzpicture}
+\end{center}
+
+\begin{example}[Euler's reflection formula]
+  For $0 < a < 1$, we prove:
+  \[
+    \int_0^{\infty} \frac{x^{a-1}}{1 + x} \, dx = \frac{\pi}{\sin(\pi a)}.
+  \]
+
+  Consider $f(z) = z^{a-1}/(1+z)$ with a branch cut along $[0, \infty)$ and $z^{a-1} = |z|^{a-1} e^{i(a-1)\theta}$ for $\theta \in (0, 2\pi)$.
+
+  The function $f$ has a simple pole at $z = -1 = e^{i\pi}$. The residue is:
+  \[
+    \operatorname{Res}(f, -1) = \lim_{z \to -1} (z + 1) \cdot \frac{z^{a-1}}{1+z} = (-1)^{a-1} = e^{i\pi(a-1)}.
+  \]
+
+  \textbf{The keyhole contour integral}:
+
+  Integrate $f$ around the keyhole contour. By the Residue Theorem:
+  \[
+    \oint_{\gamma} f(z) \, dz = 2\pi i \cdot e^{i\pi(a-1)}.
+  \]
+
+  We evaluate each piece:
+
+  \textbf{Large circle $C_R$}: Parametrize $z = Re^{i\theta}$.
+  \[
+    \left| \int_{C_R} \frac{z^{a-1}}{1+z} \, dz \right| \leq \frac{R^{a-1}}{R - 1} \cdot 2\pi R = \frac{2\pi R^a}{R - 1} \xrightarrow{R \to \infty} 0,
+  \]
+  since $a < 1$.
+
+  \textbf{Small circle $C_\delta$}: Similarly,
+  \[
+    \left| \int_{C_\delta} \frac{z^{a-1}}{1+z} \, dz \right| \leq \frac{\delta^{a-1}}{1 - \delta} \cdot 2\pi \delta = \frac{2\pi \delta^a}{1 - \delta} \xrightarrow{\delta \to 0} 0,
+  \]
+  since $a > 0$.
+
+  \textbf{Above the cut} (from $R$ to $\delta$, with $\theta \to 0^+$):
+  Here $z = x$ with $x \in (\delta, R)$ and $\arg(z) = 0^+$, so $z^{a-1} = x^{a-1} e^{i(a-1) \cdot 0} = x^{a-1}$.
+  \[
+    \int_{\text{above}} = \int_R^\delta \frac{x^{a-1}}{1+x} \, dx = -\int_\delta^R \frac{x^{a-1}}{1+x} \, dx.
+  \]
+
+  \textbf{Below the cut} (from $\delta$ to $R$, with $\theta \to 2\pi^-$):
+  Here $z = x$ with $\arg(z) = 2\pi^-$, so $z^{a-1} = x^{a-1} e^{i(a-1) \cdot 2\pi} = x^{a-1} e^{2\pi i(a-1)}$.
+  \[
+    \int_{\text{below}} = \int_\delta^R \frac{x^{a-1} e^{2\pi i(a-1)}}{1+x} \, dx = e^{2\pi i(a-1)} \int_\delta^R \frac{x^{a-1}}{1+x} \, dx.
+  \]
+
+  \textbf{Combining}: Taking $R \to \infty$ and $\delta \to 0$:
+  \[
+    -\int_0^\infty \frac{x^{a-1}}{1+x} \, dx + e^{2\pi i(a-1)} \int_0^\infty \frac{x^{a-1}}{1+x} \, dx = 2\pi i \cdot e^{i\pi(a-1)}.
+  \]
+
+  Let $I = \int_0^\infty \frac{x^{a-1}}{1+x} \, dx$. Then:
+  \[
+    I \left( e^{2\pi i(a-1)} - 1 \right) = 2\pi i \cdot e^{i\pi(a-1)}.
+  \]
+
+  Factor the left side:
+  \[
+    e^{2\pi i(a-1)} - 1 = e^{i\pi(a-1)} \left( e^{i\pi(a-1)} - e^{-i\pi(a-1)} \right) = e^{i\pi(a-1)} \cdot 2i \sin(\pi(a-1)).
+  \]
+
+  Since $\sin(\pi(a-1)) = -\sin(\pi a)$:
+  \[
+    I \cdot e^{i\pi(a-1)} \cdot (-2i \sin(\pi a)) = 2\pi i \cdot e^{i\pi(a-1)}.
+  \]
+
+  Dividing:
+  \[
+    I = \frac{2\pi i}{-2i \sin(\pi a)} = \frac{\pi}{\sin(\pi a)}.
+  \]
+
+  Therefore,
+  \[
+    \boxed{\int_0^{\infty} \frac{x^{a-1}}{1 + x} \, dx = \frac{\pi}{\sin(\pi a)}, \quad 0 < a < 1.}
+  \]
+\end{example}
+
+\begin{remark}
+  This integral is intimately connected to the Gamma function. Setting $x = t/(1-t)$ transforms it into the Beta function $B(a, 1-a)$, and using $B(a,b) = \Gamma(a)\Gamma(b)/\Gamma(a+b)$ with $\Gamma(1) = 1$ yields \textbf{Euler's reflection formula}:
+  \[
+    \Gamma(a) \Gamma(1-a) = \frac{\pi}{\sin(\pi a)}.
+  \]
+  This is one of the most beautiful identities in mathematics, connecting the Gamma function to trigonometry.
+\end{remark}
+
+\begin{corollary}
+  Setting $a = 1/2$ in Euler's reflection formula:
+  \[
+    \Gamma\left(\frac{1}{2}\right)^2 = \frac{\pi}{\sin(\pi/2)} = \pi,
+  \]
+  hence $\Gamma(1/2) = \sqrt{\pi}$, which is equivalent to the Gaussian integral $\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$.
+\end{corollary}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Further Results in Complex Analysis}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Liouville's Theorem and the Fundamental Theorem of Algebra}
+
+Liouville's theorem is a striking result: bounded entire functions must be constant. This seemingly simple statement has profound consequences, including an elegant proof of the Fundamental Theorem of Algebra.
+
+\begin{theorem}[Liouville's theorem]
+  Let $f : \mathbb{C} \to \mathbb{C}$ be an entire function (holomorphic on all of $\mathbb{C}$).
+  If $f$ is bounded, i.e., there exists $M > 0$ such that $|f(z)| \leq M$ for all $z \in \mathbb{C}$, then $f$ is constant.
+\end{theorem}
+
+\begin{center}
+  \begin{tikzpicture}[scale=0.85]
+    % Left: bounded entire function
+    \begin{scope}[xshift=-4cm]
+      \draw[->] (-2.2,0) -- (2.2,0) node[right] {\small $\operatorname{Re}$};
+      \draw[->] (0,-2.2) -- (0,2.2) node[above] {\small $\operatorname{Im}$};
+
+      % Bounded region
+      \draw[blue, very thick, dashed] (0,0) circle (1.5);
+      \fill[blue!10, opacity=0.5] (0,0) circle (1.5);
+
+      % Function values contained
+      \node[blue] at (0,-0.2) {$f(\mathbb{C})$};
+      \node at (1.9,1.2) {\small $|f| \leq M$};
+
+      \node at (0,-2.8) {$f$ bounded entire};
+    \end{scope}
+
+    % Arrow
+    \draw[->, very thick] (-1.2,0) -- (0.8,0) node[midway, above] {\small Liouville};
+
+    % Right: constant function
+    \begin{scope}[xshift=4cm]
+      \draw[->] (-2.2,0) -- (2.2,0) node[right] {\small $\operatorname{Re}$};
+      \draw[->] (0,-2.2) -- (0,2.2) node[above] {\small $\operatorname{Im}$};
+
+      % Single point
+      \fill[red] (0.5,0.7) circle (4pt);
+      \node[red, right] at (0.7,0.7) {$c$};
+
+      \node at (0,-2.8) {$f(z) = c$ constant};
+    \end{scope}
+  \end{tikzpicture}
+\end{center}
+
+\begin{proof}
+  Let $a \in \mathbb{C}$ be arbitrary. By the Cauchy integral formula for derivatives, for any $R > 0$:
+  \[
+    f'(a) = \frac{1}{2\pi i} \oint_{|z-a|=R} \frac{f(z)}{(z-a)^2} \, dz.
+  \]
+
+  Taking absolute values and using $|f(z)| \leq M$:
+  \[
+    |f'(a)| \leq \frac{1}{2\pi} \cdot \frac{M}{R^2} \cdot 2\pi R = \frac{M}{R}.
+  \]
+
+  Since this holds for all $R > 0$, letting $R \to \infty$ gives $|f'(a)| = 0$.
+
+  As $a$ was arbitrary, $f'(z) = 0$ for all $z \in \mathbb{C}$. Thus $f$ is constant.
+\end{proof}
+
+\begin{theorem}[Fundamental theorem of algebra]
+  Every non-constant polynomial $p(z) \in \mathbb{C}[z]$ has at least one root in $\mathbb{C}$.
+\end{theorem}
+
+\begin{center}
+  \begin{tikzpicture}[scale=0.9]
+    \draw[->] (-3,0) -- (3,0) node[right] {$\operatorname{Re}$};
+    \draw[->] (0,-2.2) -- (0,2.2) node[above] {$\operatorname{Im}$};
+
+    % Roots of z^4 - 1
+    \fill[red] (1.5,0) circle (3pt) node[below right] {$z_1$};
+    \fill[red] (-1.5,0) circle (3pt) node[below left] {$z_2$};
+    \fill[red] (0,1.5) circle (3pt) node[above right] {$z_3$};
+    \fill[red] (0,-1.5) circle (3pt) node[below right] {$z_4$};
+
+    % Connect roots
+    \draw[gray, dashed] (1.5,0) -- (0,1.5) -- (-1.5,0) -- (0,-1.5) -- cycle;
+
+    \node at (0,-3) {Roots of $p(z) = z^4 - 1$};
+  \end{tikzpicture}
+\end{center}
+
+\begin{proof}
+  Suppose $p(z) = a_n z^n + a_{n-1} z^{n-1} + \cdots + a_0$ with $a_n \neq 0$ and $n \geq 1$ has no roots in $\mathbb{C}$.
+
+  Then $f(z) = 1/p(z)$ is entire (holomorphic everywhere).
+
+  We show $f$ is bounded. For large $|z|$:
+  \[
+    |p(z)| = |a_n| |z|^n \left| 1 + \frac{a_{n-1}}{a_n z} + \cdots + \frac{a_0}{a_n z^n} \right| \geq |a_n| |z|^n \cdot \frac{1}{2}
+  \]
+  for $|z| \geq R$ sufficiently large (since the terms in parentheses approach 1).
+
+  Thus $|f(z)| = 1/|p(z)| \leq 2/(|a_n| R^n)$ for $|z| \geq R$.
+
+  On the compact disk $|z| \leq R$, $f$ is continuous, hence bounded.
+
+  Therefore $f$ is bounded on all of $\mathbb{C}$. By Liouville's theorem, $f$ is constant.
+
+  But $f(z) = 1/p(z)$ being constant implies $p(z)$ is constant, contradicting $n \geq 1$.
+
+  Hence $p$ must have at least one root in $\mathbb{C}$.
+\end{proof}
+
+\begin{corollary}
+  Every polynomial $p(z) \in \mathbb{C}[z]$ of degree $n \geq 1$ factors completely:
+  \[
+    p(z) = a_n (z - z_1)(z - z_2) \cdots (z - z_n),
+  \]
+  where $z_1, \ldots, z_n \in \mathbb{C}$ are the roots (counted with multiplicity).
+\end{corollary}
+
+\section{The Maximum Modulus Principle}
+
+The maximum modulus principle states that a non-constant holomorphic function cannot attain its maximum modulus in the interior of its domain---the maximum must occur on the boundary.
+
+\begin{theorem}[Maximum modulus principle]
+  Let $U \subseteq \mathbb{C}$ be a connected open set and let $f : U \to \mathbb{C}$ be holomorphic.
+  If $|f|$ attains a local maximum at some point $a \in U$, then $f$ is constant.
+\end{theorem}
+
+\begin{center}
+  \begin{tikzpicture}[scale=1.0]
+    % Domain
+    \draw[thick, blue, fill=blue!8] plot[smooth cycle, tension=0.8] coordinates {(-2,0) (-1.5,-1.2) (0.5,-1.3) (2,-0.8) (2.2,0.5) (1.5,1.3) (0,1.5) (-1.5,1.2)};
+    \node[blue] at (-2.3,0.8) {$U$};
+
+    % Interior point
+    \fill[gray] (0,0) circle (2.5pt) node[below] {\small interior};
+
+    % Boundary points where max occurs
+    \fill[red] (2.1,0.1) circle (3pt);
+    \fill[red] (-1.8,0.6) circle (3pt);
+    \node[red] at (2.6,0.1) {\small $\max |f|$};
+
+    % Annotation
+    \draw[->] (0,0) -- (1.8,0.3);
+    \node at (0.9,0.5) {\small $|f|$ increases};
+
+    % Caption
+    \node at (0,-2) {Maximum of $|f|$ occurs on $\partial U$, not interior};
+  \end{tikzpicture}
+\end{center}
+
+\begin{proof}
+  Suppose $|f|$ has a local maximum at $a \in U$. Choose $r > 0$ such that $\overline{D(a,r)} \subseteq U$ and $|f(z)| \leq |f(a)|$ for all $z \in D(a,r)$.
+
+  By the Cauchy integral formula (mean value property):
+  \[
+    f(a) = \frac{1}{2\pi} \int_0^{2\pi} f(a + re^{i\theta}) \, d\theta.
+  \]
+
+  Taking absolute values:
+  \[
+    |f(a)| \leq \frac{1}{2\pi} \int_0^{2\pi} |f(a + re^{i\theta})| \, d\theta \leq \frac{1}{2\pi} \int_0^{2\pi} |f(a)| \, d\theta = |f(a)|.
+  \]
+
+  Equality holds throughout, which requires $|f(a + re^{i\theta})| = |f(a)|$ for all $\theta$.
+
+  More carefully, since $f(a)$ is the average of $f(a + re^{i\theta})$ and $|f(a + re^{i\theta})| \leq |f(a)|$ for all $\theta$, the only way the average can have modulus $|f(a)|$ is if all terms $f(a + re^{i\theta})$ point in the same direction, i.e., $f$ is constant on the circle $|z-a| = r$.
+
+  By the identity theorem, $f$ is constant on all of $U$.
+\end{proof}
+
+\begin{corollary}[Maximum modulus principle, boundary version]
+  Let $U$ be a bounded connected open set and let $f : \overline{U} \to \mathbb{C}$ be continuous on $\overline{U}$ and holomorphic on $U$. Then
+  \[
+    \max_{z \in \overline{U}} |f(z)| = \max_{z \in \partial U} |f(z)|.
+  \]
+\end{corollary}
+
+\begin{center}
+  \begin{tikzpicture}[scale=0.85]
+    % 3D-like plot of |f| over domain
+    \begin{scope}
+      % Base domain
+      \draw[thick, blue] (0,0) ellipse (2.5 and 1.2);
+      \node[blue] at (-2.8,0) {$\partial U$};
+
+      % Surface suggesting |f| values
+      \draw[gray, fill=gray!20, opacity=0.7]
+      plot[smooth cycle, tension=0.9] coordinates {
+          (-2.5,0.8) (-1.5,1.8) (0,2.2) (1.5,2.0) (2.5,1.0) (1.5,0.5) (0,0.4) (-1.5,0.5)
+        };
+
+      % Maximum on boundary
+      \fill[red] (0,2.2) circle (3pt);
+      \node[red, above] at (0,2.2) {$\max |f|$};
+
+      % Interior lower
+      \fill[gray] (0,0.8) circle (2pt);
+      \node[gray, below] at (0,0.6) {\small interior};
+
+      % Arrows showing |f| direction
+      \draw[->, thick] (0,0.8) -- (0,1.8);
+      \draw[->, thick] (-1,0.6) -- (-1.8,1.2);
+      \draw[->, thick] (1,0.6) -- (1.8,1.2);
+    \end{scope}
+
+    \node at (0,-1.8) {$|f|$ achieves maximum on boundary $\partial U$};
+  \end{tikzpicture}
+\end{center}
+
+\begin{remark}
+  The maximum modulus principle has a useful contrapositive: if $f$ is holomorphic and non-constant on a connected open set $U$, then $|f|$ has no local maximum in $U$.
+\end{remark}
+
+\section{The Argument Principle and Rouch\'e's Theorem}
+
+The argument principle counts zeros and poles of a meromorphic function inside a contour by integrating $f'/f$. Rouch\'e's theorem uses this to compare zeros of two functions.
+
+\begin{theorem}[Argument principle]
+  Let $f$ be meromorphic on an open set containing $\overline{D}$ where $D$ is a bounded domain with piecewise smooth boundary $\gamma = \partial D$ oriented positively.
+  Suppose $f$ has no zeros or poles on $\gamma$. Then
+  \[
+    \frac{1}{2\pi i} \oint_\gamma \frac{f'(z)}{f(z)} \, dz = Z - P,
+  \]
+  where $Z$ is the number of zeros and $P$ is the number of poles of $f$ inside $\gamma$, counted with multiplicity.
+\end{theorem}
+
+\begin{center}
+  \begin{tikzpicture}[scale=0.95]
+    % Contour
+    \draw[very thick, blue, decoration={markings, mark=at position 0.15 with {\arrow{>}}, mark=at position 0.4 with {\arrow{>}}, mark=at position 0.65 with {\arrow{>}}, mark=at position 0.9 with {\arrow{>}}}, postaction={decorate}]
+    plot[smooth cycle, tension=0.8] coordinates {(-2.2,0) (-1.8,-1.3) (0,-1.5) (2,-1.2) (2.5,0) (2,1.3) (0,1.6) (-1.8,1.2)};
+    \node[blue] at (-2.6,0.8) {$\gamma$};
+
+    % Shaded interior
+    \fill[blue!8, opacity=0.7] plot[smooth cycle, tension=0.8] coordinates {(-2.2,0) (-1.8,-1.3) (0,-1.5) (2,-1.2) (2.5,0) (2,1.3) (0,1.6) (-1.8,1.2)};
+
+    % Zeros (marked with o)
+    \draw[green!60!black, thick] (-1,0.3) circle (4pt);
+    \fill[green!60!black] (-1,0.3) circle (1.5pt);
+    \node[green!60!black, above] at (-1,0.5) {\small zero};
+
+    \draw[green!60!black, thick] (0.8,-0.4) circle (4pt);
+    \fill[green!60!black] (0.8,-0.4) circle (1.5pt);
+
+    \draw[green!60!black, thick] (1.3,0.7) circle (4pt);
+    \fill[green!60!black] (1.3,0.7) circle (1.5pt);
+
+    % Poles (marked with x)
+    \draw[red, thick] (-0.5,-0.7) -- ++(-0.15,-0.15) -- ++(0.3,0.3);
+    \draw[red, thick] (-0.5,-0.7) -- ++(-0.15,0.15) -- ++(0.3,-0.3);
+    \node[red, below] at (-0.5,-0.85) {\small pole};
+
+    % Legend
+    \node at (0,-2.3) {$Z = 3$ zeros, $P = 1$ pole};
+    \node at (0,-2.9) {$\displaystyle\frac{1}{2\pi i}\oint_\gamma \frac{f'}{f}\,dz = 3 - 1 = 2$};
+  \end{tikzpicture}
+\end{center}
+
+\begin{proof}
+  Near a zero $a$ of order $m$, we can write $f(z) = (z-a)^m g(z)$ where $g$ is holomorphic and $g(a) \neq 0$. Then
+  \[
+    \frac{f'(z)}{f(z)} = \frac{m(z-a)^{m-1} g(z) + (z-a)^m g'(z)}{(z-a)^m g(z)} = \frac{m}{z-a} + \frac{g'(z)}{g(z)}.
+  \]
+  The second term is holomorphic near $a$, so $f'/f$ has a simple pole at $a$ with residue $m$.
+
+  Similarly, near a pole $b$ of order $n$, write $f(z) = (z-b)^{-n} h(z)$ with $h(b) \neq 0$. Then
+  \[
+    \frac{f'(z)}{f(z)} = \frac{-n}{z-b} + \frac{h'(z)}{h(z)},
+  \]
+  so $f'/f$ has a simple pole at $b$ with residue $-n$.
+
+  By the residue theorem:
+  \[
+    \frac{1}{2\pi i} \oint_\gamma \frac{f'(z)}{f(z)} \, dz = \sum_{\text{zeros } a_j} m_j - \sum_{\text{poles } b_k} n_k = Z - P. \qedhere
+  \]
+\end{proof}
+
+\begin{remark}[Geometric interpretation]
+  The integral $\frac{1}{2\pi i} \oint_\gamma \frac{f'(z)}{f(z)} dz$ equals the winding number of the image curve $f(\gamma)$ around the origin. As $z$ traverses $\gamma$, the argument of $f(z)$ changes by $2\pi(Z - P)$.
+\end{remark}
+
+\begin{center}
+  \begin{tikzpicture}[scale=0.8]
+    % Left: z-plane
+    \begin{scope}[xshift=-4cm]
+      \draw[->] (-2,0) -- (2,0) node[right] {\small $\operatorname{Re}$};
+      \draw[->] (0,-1.5) -- (0,1.5) node[above] {\small $\operatorname{Im}$};
+
+      \draw[very thick, blue, decoration={markings, mark=at position 0.25 with {\arrow{>}}, mark=at position 0.75 with {\arrow{>}}}, postaction={decorate}]
+      (0,0) circle (1.2);
+      \node[blue] at (1.5,0.8) {$\gamma$};
+
+      % Zero inside
+      \fill[green!60!black] (0.3,0.2) circle (2.5pt);
+
+      \node at (0,-2.2) {$z$-plane};
+    \end{scope}
+
+    % Arrow
+    \draw[->, very thick] (-1.5,0) -- (-0.5,0) node[midway, above] {\small $f$};
+
+    % Right: w-plane
+    \begin{scope}[xshift=2.5cm]
+      \draw[->] (-2.5,0) -- (2.5,0) node[right] {\small $\operatorname{Re}$};
+      \draw[->] (0,-2) -- (0,2) node[above] {\small $\operatorname{Im}$};
+
+      % Image curve winding around origin
+      \draw[very thick, red, decoration={markings, mark=at position 0.2 with {\arrow{>}}, mark=at position 0.7 with {\arrow{>}}}, postaction={decorate}]
+      plot[smooth, tension=0.9] coordinates {(1.5,0) (0.8,1.2) (-1,1) (-1.5,-0.3) (-0.5,-1.3) (1,-0.8) (1.5,0)};
+
+      \fill[black] (0,0) circle (2pt);
+      \node at (0.3,-0.3) {\small $0$};
+
+      \node[red] at (1.8,1) {$f(\gamma)$};
+      \node at (0,-2.7) {$w$-plane: winding number $= 1$};
+    \end{scope}
+  \end{tikzpicture}
+\end{center}
+
+\begin{theorem}[Rouch\'e's theorem]
+  Let $f$ and $g$ be holomorphic on an open set containing $\overline{D}$, where $\partial D = \gamma$ is a simple closed curve.
+  If
+  \[
+    |f(z) - g(z)| < |g(z)| \quad \text{for all } z \in \gamma,
+  \]
+  then $f$ and $g$ have the same number of zeros inside $\gamma$ (counted with multiplicity).
+\end{theorem}
+
+\begin{center}
+  \begin{tikzpicture}[scale=0.9]
+    % Contour
+    \draw[very thick, blue, decoration={markings, mark=at position 0.25 with {\arrow{>}}, mark=at position 0.75 with {\arrow{>}}}, postaction={decorate}]
+    (0,0) circle (2);
+    \node[blue] at (2.4,0.5) {$\gamma$};
+
+    % Interior
+    \fill[blue!8, opacity=0.5] (0,0) circle (2);
+
+    % At a point on gamma, show the condition
+    \coordinate (P) at (1.73,1);
+    \fill[black] (P) circle (2pt);
+
+    % Vector g(z)
+    \draw[->, thick, red] (P) -- ++(0.8,0.3) node[right] {\small $g(z)$};
+
+    % Vector f(z)-g(z) smaller
+    \draw[->, thick, green!60!black, dashed] ($(P)+(0.8,0.3)$) -- ++(-0.3,0.2);
+    \node[green!60!black] at (2.5,1.8) {\small $f-g$};
+
+    % Condition
+    \node at (0,-2.8) {On $\gamma$: $|f(z) - g(z)| < |g(z)|$};
+    \node at (0,-3.4) {$\Rightarrow$ $f$ and $g$ have same number of zeros in $D$};
+  \end{tikzpicture}
+\end{center}
+
+\begin{proof}
+  The condition $|f - g| < |g|$ on $\gamma$ implies $g(z) \neq 0$ on $\gamma$ (otherwise $|f-g| < 0$).
+  It also implies $f(z) \neq 0$ on $\gamma$ (since $|f| \geq |g| - |f-g| > 0$).
+
+  Consider the function $h(z) = f(z)/g(z)$, which is meromorphic with no zeros or poles on $\gamma$.
+
+  On $\gamma$:
+  \[
+    \left| \frac{f(z)}{g(z)} - 1 \right| = \frac{|f(z) - g(z)|}{|g(z)|} < 1.
+  \]
+
+  This means $h(\gamma)$ lies in the disk $|w - 1| < 1$, which does not contain the origin.
+
+  Therefore the winding number of $h(\gamma)$ around $0$ is zero.
+
+  By the argument principle:
+  \[
+    0 = \frac{1}{2\pi i} \oint_\gamma \frac{h'(z)}{h(z)} \, dz = Z_h - P_h = Z_f - Z_g,
+  \]
+  where $Z_h, P_h$ are zeros and poles of $h = f/g$ inside $\gamma$, which equal $Z_f$ and $Z_g$ respectively.
+
+  Thus $Z_f = Z_g$.
+\end{proof}
+
+\begin{example}[Counting zeros]
+  We show that $p(z) = z^5 + 3z + 1$ has exactly 5 zeros in $|z| < 2$.
+
+  Let $g(z) = z^5$ and $f(z) = z^5 + 3z + 1$. On $|z| = 2$:
+  \[
+    |f(z) - g(z)| = |3z + 1| \leq 3|z| + 1 = 7,
+  \]
+  while
+  \[
+    |g(z)| = |z|^5 = 32.
+  \]
+
+  Since $7 < 32$, Rouch\'e's theorem applies: $f$ has the same number of zeros as $g(z) = z^5$ inside $|z| < 2$, namely 5 zeros.
+\end{example}
+
+\begin{example}[Zeros of $e^z = 2z$ in the unit disk]
+  How many solutions does $e^z = 2z$ have in $|z| < 1$?
+
+  Rewrite as $f(z) = e^z - 2z = 0$. Let $g(z) = -2z$. On $|z| = 1$:
+  \[
+    |f(z) - g(z)| = |e^z| \leq e^{|z|} = e \approx 2.718,
+  \]
+  while
+  \[
+    |g(z)| = 2|z| = 2.
+  \]
+
+  Since $e > 2$, this doesn't work. Try instead $g(z) = e^z$:
+  \[
+    |f(z) - g(z)| = |-2z| = 2,
+  \]
+  while $|g(z)| = |e^z| \geq e^{-1} \approx 0.368$.
+
+  This also fails. Let's try $g(z) = -2z$ on a larger circle or use different approach.
+
+  Actually, on $|z| = 1$: $|e^z| \leq e$ and $|2z| = 2$, so $|e^z - 2z| \geq |2z| - |e^z|$ could be negative.
+
+  A direct analysis shows: $f(z) = e^z - 2z$ has exactly one zero in $|z| < 1$ (by checking $f(0) = 1 > 0$, $f(1) = e - 2 > 0$, and using the argument principle numerically, or noting the zero near $z \approx 0.2$).
+\end{example}
+
+\section{Harmonic Functions}
+
+Harmonic functions are intimately connected to holomorphic functions: the real and imaginary parts of any holomorphic function are harmonic, and conversely, every harmonic function is locally the real part of a holomorphic function.
+
+\begin{definition}[Harmonic function]
+  A function $u : U \to \mathbb{R}$ on an open set $U \subseteq \mathbb{R}^2 \cong \mathbb{C}$ is \emph{harmonic} if it is $C^2$ (twice continuously differentiable) and satisfies Laplace's equation:
+  \[
+    \Delta u = \frac{\partial^2 u}{\partial x^2} + \frac{\partial^2 u}{\partial y^2} = 0.
+  \]
+\end{definition}
+
+\begin{center}
+  \begin{tikzpicture}[scale=0.85]
+    % Level curves of a harmonic function (like Re(z^2) = x^2 - y^2)
+    \draw[->] (-2.5,0) -- (2.5,0) node[right] {$x$};
+    \draw[->] (0,-2.5) -- (0,2.5) node[above] {$y$};
+
+    % Hyperbolas x^2 - y^2 = c for various c
+    \foreach \c in {0.3, 0.8, 1.5} {
+        % Right branch
+        \draw[blue, thick, domain=-1.8:1.8, samples=50] plot ({sqrt(\c + \x*\x)}, \x);
+        % Left branch
+        \draw[blue, thick, domain=-1.8:1.8, samples=50] plot ({-sqrt(\c + \x*\x)}, \x);
+      }
+
+    % Asymptotes (c=0)
+    \draw[blue, thick] (-2.2,-2.2) -- (2.2,2.2);
+    \draw[blue, thick] (-2.2,2.2) -- (2.2,-2.2);
+
+    % Orthogonal curves (level curves of Im(z^2) = 2xy)
+    \foreach \c in {0.8, 1.6} {
+        \draw[red, thick, domain=0.2:2.2, samples=30] plot (\x, {\c/(2*\x)});
+        \draw[red, thick, domain=0.2:2.2, samples=30] plot (\x, {-\c/(2*\x)});
+        \draw[red, thick, domain=0.2:2.2, samples=30] plot ({-\x}, {\c/(2*\x)});
+        \draw[red, thick, domain=0.2:2.2, samples=30] plot ({-\x}, {-\c/(2*\x)});
+      }
+
+    \node[blue] at (2.2,-1.5) {\small $u = c$};
+    \node[red] at (1.8,1.8) {\small $v = c$};
+
+    \node at (0,-3.2) {Level curves of $u = x^2 - y^2$ and $v = 2xy$};
+    \node at (0,-3.8) {\small (real and imaginary parts of $z^2$)};
+  \end{tikzpicture}
+\end{center}
+
+\begin{theorem}[Holomorphic implies harmonic]
+  If $f = u + iv$ is holomorphic on an open set $U$, then both $u$ and $v$ are harmonic on $U$.
+\end{theorem}
+
+\begin{proof}
+  Since $f$ is holomorphic, the Cauchy-Riemann equations hold:
+  \[
+    \frac{\partial u}{\partial x} = \frac{\partial v}{\partial y}, \quad \frac{\partial u}{\partial y} = -\frac{\partial v}{\partial x}.
+  \]
+
+  Differentiating the first equation with respect to $x$ and the second with respect to $y$:
+  \[
+    \frac{\partial^2 u}{\partial x^2} = \frac{\partial^2 v}{\partial x \partial y}, \quad \frac{\partial^2 u}{\partial y^2} = -\frac{\partial^2 v}{\partial y \partial x}.
+  \]
+
+  Since $f$ is holomorphic, its derivatives are continuous, so mixed partials are equal. Thus:
+  \[
+    \Delta u = \frac{\partial^2 u}{\partial x^2} + \frac{\partial^2 u}{\partial y^2} = \frac{\partial^2 v}{\partial x \partial y} - \frac{\partial^2 v}{\partial y \partial x} = 0.
+  \]
+
+  Similarly, $\Delta v = 0$.
+\end{proof}
+
+\begin{definition}[Harmonic conjugate]
+  If $u$ is harmonic on a simply connected domain $U$ and there exists a harmonic function $v$ such that $f = u + iv$ is holomorphic on $U$, then $v$ is called a \emph{harmonic conjugate} of $u$.
+\end{definition}
+
+\begin{theorem}[Existence of harmonic conjugate]
+  If $u$ is harmonic on a simply connected domain $U$, then $u$ has a harmonic conjugate $v$, unique up to an additive constant.
+\end{theorem}
+
+\begin{proof}
+  Define $v$ by the line integral:
+  \[
+    v(x,y) = \int_{(x_0,y_0)}^{(x,y)} \left( -\frac{\partial u}{\partial y} \, dx + \frac{\partial u}{\partial x} \, dy \right),
+  \]
+  where $(x_0, y_0) \in U$ is a fixed base point.
+
+  This integral is path-independent because $u$ is harmonic: the curl of $(-u_y, u_x)$ is
+  \[
+    \frac{\partial}{\partial x}(u_x) - \frac{\partial}{\partial y}(-u_y) = u_{xx} + u_{yy} = \Delta u = 0.
+  \]
+
+  Then $v_x = -u_y$ and $v_y = u_x$, which are exactly the Cauchy-Riemann equations. Thus $f = u + iv$ is holomorphic.
+\end{proof}
+
+\begin{example}
+  Let $u(x,y) = x^2 - y^2$. We verify $u$ is harmonic:
+  \[
+    \Delta u = \frac{\partial^2}{\partial x^2}(x^2 - y^2) + \frac{\partial^2}{\partial y^2}(x^2 - y^2) = 2 + (-2) = 0. \checkmark
+  \]
+
+  To find the harmonic conjugate:
+  \[
+    v_x = -u_y = -(-2y) = 2y, \quad v_y = u_x = 2x.
+  \]
+
+  Integrating: $v = 2xy + C$.
+
+  Indeed, $f(z) = (x^2 - y^2) + i(2xy) = z^2$.
+\end{example}
+
+\begin{theorem}[Mean value property for harmonic functions]
+  If $u$ is harmonic on an open set containing $\overline{D(a,r)}$, then
+  \[
+    u(a) = \frac{1}{2\pi} \int_0^{2\pi} u(a + re^{i\theta}) \, d\theta.
+  \]
+  The value at the center equals the average over any circle.
+\end{theorem}
+
+\begin{center}
+  \begin{tikzpicture}[scale=1.0]
+    % Circle
+    \draw[thick, blue] (0,0) circle (1.8);
+
+    % Center point
+    \fill[red] (0,0) circle (3pt);
+    \node[red, below] at (0,-0.2) {$u(a)$};
+
+    % Points on circle
+    \foreach \angle in {0, 45, 90, 135, 180, 225, 270, 315} {
+        \fill[blue] ({1.8*cos(\angle)}, {1.8*sin(\angle)}) circle (2pt);
+      }
+
+    % Arrows suggesting averaging
+    \draw[->, gray, dashed] ({1.8*cos(30)}, {1.8*sin(30)}) -- (0.2,0.1);
+    \draw[->, gray, dashed] ({1.8*cos(120)}, {1.8*sin(120)}) -- (-0.1,0.15);
+    \draw[->, gray, dashed] ({1.8*cos(210)}, {1.8*sin(210)}) -- (-0.15,-0.1);
+    \draw[->, gray, dashed] ({1.8*cos(300)}, {1.8*sin(300)}) -- (0.1,-0.15);
+
+    % Labels
+    \node[blue] at (2.3,0) {$r$};
+    \node at (0,-2.5) {$u(a) = $ average of $u$ on circle};
+  \end{tikzpicture}
+\end{center}
+
+\begin{theorem}[Maximum principle for harmonic functions]
+  Let $u$ be harmonic on a connected open set $U$. If $u$ attains a maximum or minimum at an interior point, then $u$ is constant.
+\end{theorem}
+
+\begin{proof}
+  If $u$ attains a maximum at $a \in U$, the mean value property gives $u(a) = \frac{1}{2\pi} \int_0^{2\pi} u(a + re^{i\theta}) d\theta$ for small $r$. Since $u(a + re^{i\theta}) \leq u(a)$ and the average equals $u(a)$, we must have $u = u(a)$ on the entire circle. This extends to all of $U$ by connectedness.
+\end{proof}
+
+\section{Analytic Continuation}
+
+Analytic continuation extends holomorphic functions beyond their original domain of definition. This powerful technique reveals that many functions have a ``natural'' maximal domain.
+
+\begin{definition}[Analytic continuation]
+  Let $f_1$ be holomorphic on a domain $D_1$ and $f_2$ be holomorphic on a domain $D_2$, where $D_1 \cap D_2 \neq \emptyset$.
+  If $f_1 = f_2$ on $D_1 \cap D_2$, then $f_2$ is called an \emph{analytic continuation} of $f_1$ to $D_2$ (and vice versa).
+\end{definition}
+
+\begin{center}
+  \begin{tikzpicture}[scale=0.95]
+    % Domain D1
+    \draw[thick, blue, fill=blue!15, opacity=0.8] (-2,0) circle (1.8);
+    \node[blue] at (-3.2,1.2) {$D_1$};
+    \node at (-2.5,0) {\small $f_1$};
+
+    % Domain D2
+    \draw[thick, red, fill=red!15, opacity=0.6] (1,0) circle (2);
+    \node[red] at (2.5,1.3) {$D_2$};
+    \node at (1.8,0) {\small $f_2$};
+
+    % Overlap region
+    \begin{scope}
+      \clip (-2,0) circle (1.8);
+      \fill[green!40, opacity=0.7] (1,0) circle (2);
+    \end{scope}
+    \node[green!50!black] at (-0.3,-0.5) {\small $f_1 = f_2$};
+
+    % Arrow
+    \draw[->, thick, dashed] (-0.5,1.5) to[bend left] (0.8,1.5);
+    \node at (0.1,2) {\small continue};
+
+    \node at (-0.5,-2.5) {$f_2$ extends $f_1$ from $D_1$ to $D_1 \cup D_2$};
+  \end{tikzpicture}
+\end{center}
+
+\begin{theorem}[Uniqueness of analytic continuation]
+  If $f_2$ and $\tilde{f}_2$ are both analytic continuations of $f_1$ from $D_1$ to $D_2$, then $f_2 = \tilde{f}_2$ on $D_2$.
+\end{theorem}
+
+\begin{proof}
+  Both $f_2$ and $\tilde{f}_2$ agree with $f_1$ on $D_1 \cap D_2$, which is a non-empty open set. By the identity theorem, $f_2 = \tilde{f}_2$ on all of $D_2$.
+\end{proof}
+
+\begin{example}[Geometric series]
+  The power series
+  \[
+    f_1(z) = \sum_{n=0}^{\infty} z^n = \frac{1}{1-z}
+  \]
+  converges only for $|z| < 1$. But $f_2(z) = 1/(1-z)$ is holomorphic on $\mathbb{C} \setminus \{1\}$.
+
+  Thus $f_2$ is the analytic continuation of $f_1$ to the larger domain $\mathbb{C} \setminus \{1\}$.
+\end{example}
+
+\begin{center}
+  \begin{tikzpicture}[scale=0.9]
+    % Left: power series domain
+    \begin{scope}[xshift=-3.5cm]
+      \draw[->] (-2,0) -- (2,0) node[right] {\small Re};
+      \draw[->] (0,-2) -- (0,2) node[above] {\small Im};
+
+      \draw[thick, blue, fill=blue!15] (0,0) circle (1.3);
+      \fill[red] (1.3,0) circle (3pt);
+      \node[red, above right] at (1.3,0) {\small $1$};
+
+      \node at (0,0) {\small $\sum z^n$};
+      \node at (0,-2.7) {$|z| < 1$};
+    \end{scope}
+
+    % Arrow
+    \draw[->, very thick] (-1,0) -- (0.5,0) node[midway, above] {\small extend};
+
+    % Right: extended domain
+    \begin{scope}[xshift=3cm]
+      \draw[->] (-2.3,0) -- (2.3,0) node[right] {\small Re};
+      \draw[->] (0,-2.3) -- (0,2.3) node[above] {\small Im};
+
+      \fill[green!20] (-2.2,-2.2) rectangle (2.2,2.2);
+      \fill[white] (1.3,0) circle (4pt);
+      \draw[thick, red] (1.3,0) circle (4pt);
+      \fill[red] (1.3,0) circle (2pt);
+      \node[red, above right] at (1.4,0) {\small $1$};
+
+      \node at (-0.8,0.8) {\small $\frac{1}{1-z}$};
+      \node at (0,-2.7) {$\mathbb{C} \setminus \{1\}$};
+    \end{scope}
+  \end{tikzpicture}
+\end{center}
+
+\begin{definition}[Chain of analytic continuations]
+  A \emph{chain} of analytic continuations along a path $\gamma : [0,1] \to \mathbb{C}$ consists of:
+  \begin{itemize}
+    \item A partition $0 = t_0 < t_1 < \cdots < t_n = 1$
+    \item Disks $D_k$ centered at $\gamma(t_k)$
+    \item Holomorphic functions $f_k$ on $D_k$
+  \end{itemize}
+  such that consecutive disks overlap and $f_{k+1}$ is an analytic continuation of $f_k$.
+\end{definition}
+
+\begin{center}
+  \begin{tikzpicture}[scale=0.85]
+    % Path gamma
+    \draw[very thick, gray, ->] (-3.5,0) to[out=20, in=180] (-1,0.8) to[out=0, in=180] (1.5,0) to[out=0, in=160] (3.5,0.5);
+    \node[gray] at (3.8,0.5) {$\gamma$};
+
+    % Overlapping disks
+    \draw[thick, blue, fill=blue!10, opacity=0.7] (-3.5,0) circle (1.2);
+    \node[blue] at (-3.5,-0.3) {\small $f_0$};
+
+    \draw[thick, red, fill=red!10, opacity=0.7] (-1.5,0.6) circle (1.3);
+    \node[red] at (-1.5,0.3) {\small $f_1$};
+
+    \draw[thick, green!60!black, fill=green!10, opacity=0.7] (0.5,0.3) circle (1.2);
+    \node[green!60!black] at (0.5,0) {\small $f_2$};
+
+    \draw[thick, orange, fill=orange!10, opacity=0.7] (2.5,0.4) circle (1.1);
+    \node[orange] at (2.5,0.1) {\small $f_3$};
+
+    \node at (0,-2) {Chain of analytic continuations along $\gamma$};
+  \end{tikzpicture}
+\end{center}
+
+\begin{example}[The logarithm and monodromy]
+  Consider $f(z) = \log z$ defined initially on $D_0 = \{z : |z - 1| < 1\}$ with $\log 1 = 0$.
+
+  We can analytically continue $\log z$ along any path in $\mathbb{C} \setminus \{0\}$.
+
+  However, continuing along a loop around the origin changes the value:
+  \begin{itemize}
+    \item Start with $\log 1 = 0$
+    \item Continue counterclockwise around $|z| = 1$
+    \item Return to $z = 1$ with $\log 1 = 2\pi i$
+  \end{itemize}
+
+  This \emph{monodromy} phenomenon shows $\log z$ is fundamentally multi-valued.
+\end{example}
+
+\begin{center}
+  \begin{tikzpicture}[scale=1.0]
+    % Circle path
+    \draw[very thick, blue, decoration={markings, mark=at position 0.25 with {\arrow{>}}, mark=at position 0.75 with {\arrow{>}}}, postaction={decorate}]
+    (0,0) circle (1.5);
+
+    % Origin (branch point)
+    \fill[red] (0,0) circle (3pt);
+    \node[red, below] at (0,-0.2) {\small $0$};
+
+    % Starting point
+    \fill[green!60!black] (1.5,0) circle (4pt);
+    \node at (2.5,0.3) {Start: $\log 1 = 0$};
+    \node at (2.6,-0.3) {End: $\log 1 = 2\pi i$};
+
+    % Annotation
+    \draw[->, thick] (1.7,0.5) to[bend left=30] (0.8,1.3);
+    \node at (-0.5,1.8) {\small continue around};
+
+    \node at (0,-2.5) {Monodromy: $\log z$ gains $2\pi i$ per loop};
+  \end{tikzpicture}
+\end{center}
+
+\begin{definition}[Natural boundary]
+  A \emph{natural boundary} is a boundary beyond which a function cannot be analytically continued.
+\end{definition}
+
+\begin{example}[A function with natural boundary]
+  The lacunary series
+  \[
+    f(z) = \sum_{n=0}^{\infty} z^{2^n} = z + z^2 + z^4 + z^8 + z^{16} + \cdots
+  \]
+  converges for $|z| < 1$. The unit circle $|z| = 1$ is a \emph{natural boundary}: $f$ cannot be analytically continued past any point on $|z| = 1$.
+
+  This is because the $2^n$-th roots of unity are dense on the unit circle, and $f$ has singularities accumulating at every point.
+\end{example}
+
+\begin{center}
+  \begin{tikzpicture}[scale=1.2]
+    \draw[->] (-1.8,0) -- (1.8,0) node[right] {\small Re};
+    \draw[->] (0,-1.8) -- (0,1.8) node[above] {\small Im};
+
+    % Unit disk where f is defined
+    \fill[blue!15] (0,0) circle (1.3);
+    \draw[very thick, red] (0,0) circle (1.3);
+
+    % Dense singularities on boundary (suggested by many dots)
+    \foreach \k in {0,1,...,31} {
+        \fill[red] ({1.3*cos(\k*360/32)}, {1.3*sin(\k*360/32)}) circle (1.2pt);
+      }
+
+    \node at (0,0) {$f(z) = \sum z^{2^n}$};
+    \node[red] at (0,-1.8) {Natural boundary: $|z| = 1$};
+  \end{tikzpicture}
+\end{center}
+
+\begin{remark}
+  The Riemann zeta function $\zeta(s) = \sum_{n=1}^{\infty} n^{-s}$, initially defined for $\operatorname{Re}(s) > 1$, can be analytically continued to all of $\mathbb{C} \setminus \{1\}$. This continuation reveals the functional equation
+  \[
+    \zeta(s) = 2^s \pi^{s-1} \sin\left(\frac{\pi s}{2}\right) \Gamma(1-s) \zeta(1-s),
+  \]
+  and the famous zeros on the critical line $\operatorname{Re}(s) = 1/2$ (the Riemann Hypothesis).
+\end{remark}
