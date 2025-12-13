@@ -264,6 +264,225 @@ $P(A|B)$ asks: \emph{given we're in $B$}, what fraction is in $A$? That's $\dfra
     \]
 \end{corollary}
 
+\section{Variance and the Central Limit Theorem}
+
+\subsection{Variance and Standard Deviation}
+
+\begin{definition}[Variance]
+    The \textbf{variance} of a random variable $X$ measures how spread out its values are around the mean:
+    \[
+        \mathrm{Var}(X) = \mathbb{E}[(X - \mathbb{E}[X])^2] = \mathbb{E}[X^2] - (\mathbb{E}[X])^2.
+    \]
+    The \textbf{standard deviation} is $\sigma = \sqrt{\mathrm{Var}(X)}$, which has the same units as $X$.
+\end{definition}
+
+\begin{proposition}[Properties of Variance]
+    For random variables $X, Y$ and constants $a, b$:
+    \begin{enumerate}
+        \item $\mathrm{Var}(aX + b) = a^2 \mathrm{Var}(X)$ (shifting doesn't change spread; scaling squares).
+        \item If $X$ and $Y$ are independent: $\mathrm{Var}(X + Y) = \mathrm{Var}(X) + \mathrm{Var}(Y)$.
+        \item For $n$ i.i.d.\ copies $X_1, \ldots, X_n$ with variance $\sigma^2$:
+              \[
+                  \mathrm{Var}\left(\frac{1}{n}\sum_{i=1}^n X_i\right) = \frac{\sigma^2}{n}.
+              \]
+    \end{enumerate}
+\end{proposition}
+
+\begin{proof}
+    For property 3: Let $\bar{X} = \frac{1}{n}\sum_{i=1}^n X_i$. By independence:
+    \[
+        \mathrm{Var}(\bar{X}) = \mathrm{Var}\left(\frac{1}{n}\sum_{i=1}^n X_i\right) = \frac{1}{n^2} \sum_{i=1}^n \mathrm{Var}(X_i) = \frac{1}{n^2} \cdot n\sigma^2 = \frac{\sigma^2}{n}. \qedhere
+    \]
+\end{proof}
+
+\begin{remark}
+    The variance of the sample mean decreases as $1/n$. This is why averaging more samples gives more reliable estimates---the standard deviation shrinks as $1/\sqrt{n}$.
+\end{remark}
+
+\subsection{The Central Limit Theorem}
+
+\begin{theorem}[Central Limit Theorem]
+    Let $X_1, X_2, \ldots, X_n$ be i.i.d.\ random variables with mean $\mu$ and finite variance $\sigma^2$. Define the sample mean:
+    \[
+        \bar{X}_n = \frac{1}{n} \sum_{i=1}^n X_i.
+    \]
+    Then the standardized sample mean converges in distribution to a standard normal:
+    \[
+        \frac{\bar{X}_n - \mu}{\sigma / \sqrt{n}} \xrightarrow{d} \mathcal{N}(0, 1) \quad \text{as } n \to \infty.
+    \]
+    Equivalently, for large $n$:
+    \[
+        \bar{X}_n \approx \mathcal{N}\left(\mu, \frac{\sigma^2}{n}\right).
+    \]
+\end{theorem}
+
+\begin{remark}[What Makes CLT Remarkable]
+    The CLT says that \emph{regardless} of the original distribution of the $X_i$---whether discrete, continuous, skewed, or multimodal---the sum (or average) of many independent copies becomes approximately Gaussian. The only requirements are finite mean and variance.
+\end{remark}
+
+\begin{center}
+    \begin{tikzpicture}[scale=0.85]
+        % Original distribution (uniform)
+        \begin{scope}
+            \draw[->] (0,0) -- (3.5,0) node[right] {};
+            \draw[->] (0,0) -- (0,2) node[above] {};
+            \draw[thick, blue, fill=blue!20] (0.5,0) rectangle (2.5, 1.2);
+            \node[below, font=\small] at (1.5, -0.3) {$n=1$ (Uniform)};
+        \end{scope}
+
+        % n=2
+        \begin{scope}[xshift=4cm]
+            \draw[->] (0,0) -- (3.5,0);
+            \draw[->] (0,0) -- (0,2);
+            \draw[thick, blue, fill=blue!20] plot[smooth] coordinates {(0.3,0) (0.5,0) (1.5,1.4) (2.5,0) (2.7,0)};
+            \node[below, font=\small] at (1.5, -0.3) {$n=2$};
+        \end{scope}
+
+        % n=5
+        \begin{scope}[xshift=8cm]
+            \draw[->] (0,0) -- (3.5,0);
+            \draw[->] (0,0) -- (0,2);
+            \draw[thick, blue, fill=blue!20, domain=0:3, samples=50] plot (\x, {1.8*exp(-3*(\x-1.5)^2)});
+            \node[below, font=\small] at (1.5, -0.3) {$n=5$};
+        \end{scope}
+
+        % n=30
+        \begin{scope}[xshift=12cm]
+            \draw[->] (0,0) -- (3.5,0);
+            \draw[->] (0,0) -- (0,2);
+            \draw[thick, blue, fill=blue!20, domain=0:3, samples=50] plot (\x, {1.9*exp(-6*(\x-1.5)^2)});
+            \draw[thick, red, dashed, domain=0:3, samples=50] plot (\x, {1.9*exp(-6*(\x-1.5)^2)});
+            \node[below, font=\small] at (1.5, -0.3) {$n=30$ ($\approx$ Gaussian)};
+        \end{scope}
+
+        % Arrow and label
+        \draw[->, thick, gray] (3.2, 1) -- (3.8, 1);
+        \draw[->, thick, gray] (7.2, 1) -- (7.8, 1);
+        \draw[->, thick, gray] (11.2, 1) -- (11.8, 1);
+    \end{tikzpicture}
+\end{center}
+
+\begin{example}[Dice Rolls]
+    A single die roll is uniform on $\{1,2,3,4,5,6\}$ with $\mu = 3.5$ and $\sigma^2 = 35/12 \approx 2.92$.
+
+    If you roll $n = 100$ dice and compute the average, the CLT predicts:
+    \[
+        \bar{X}_{100} \approx \mathcal{N}\left(3.5, \frac{2.92}{100}\right) = \mathcal{N}(3.5, 0.0292).
+    \]
+    So $\bar{X}_{100}$ has standard deviation $\sqrt{0.0292} \approx 0.17$. With 95\% probability, the average lies in $3.5 \pm 1.96 \times 0.17 \approx [3.17, 3.83]$.
+\end{example}
+
+\subsection{Why CLT Matters in Machine Learning}
+
+The Central Limit Theorem is foundational to many ML techniques:
+
+\begin{remark}[Stochastic Gradient Descent]
+    In SGD, we estimate the true gradient $\nabla \mathcal{L}(\theta)$ using a mini-batch average:
+    \[
+        \hat{g} = \frac{1}{B} \sum_{i=1}^B \nabla \ell(x_i, \theta).
+    \]
+    By CLT, this estimate is approximately Gaussian around the true gradient:
+    \[
+        \hat{g} \approx \mathcal{N}\left(\nabla \mathcal{L}(\theta), \frac{\Sigma}{B}\right),
+    \]
+    where $\Sigma$ is the covariance of individual gradients. Larger batches reduce variance by $1/B$, but smaller batches provide noise that can help escape local minima.
+\end{remark}
+
+\begin{center}
+    \begin{tikzpicture}[scale=0.8]
+        % Loss landscape
+        \draw[thick, blue, domain=0:6, samples=100] plot (\x, {0.5*sin(60*\x) + 0.3*cos(120*\x) + 0.1*\x + 1});
+
+        % True gradient direction
+        \fill[black] (2, 1.45) circle (2pt);
+        \draw[->, thick, black] (2, 1.45) -- (2.8, 1.1) node[right, font=\small] {true gradient};
+
+        % Noisy gradients (mini-batch)
+        \draw[->, red!70, thick] (2, 1.45) -- (2.6, 0.9);
+        \draw[->, red!70, thick] (2, 1.45) -- (3.0, 1.3);
+        \draw[->, red!70, thick] (2, 1.45) -- (2.5, 1.5);
+        \draw[->, red!70, thick] (2, 1.45) -- (2.9, 0.8);
+
+        \node[red!70, font=\small] at (3.5, 0.5) {mini-batch gradients};
+
+        % Axes
+        \draw[->] (0,0) -- (6.5,0) node[right] {$\theta$};
+        \draw[->] (0,0) -- (0,3) node[above] {$\mathcal{L}(\theta)$};
+
+        % Annotation
+        \node[below, font=\footnotesize, align=center] at (3, -0.5) {Mini-batch gradients scatter around true gradient\\CLT: distribution is approximately Gaussian};
+    \end{tikzpicture}
+\end{center}
+
+\begin{remark}[Confidence Intervals for Model Evaluation]
+    When evaluating a model on a test set of $n$ examples, the accuracy $\hat{p}$ is a sample mean of Bernoulli variables. By CLT:
+    \[
+        \hat{p} \approx \mathcal{N}\left(p, \frac{p(1-p)}{n}\right).
+    \]
+    A 95\% confidence interval is approximately:
+    \[
+        \hat{p} \pm 1.96 \sqrt{\frac{\hat{p}(1-\hat{p})}{n}}.
+    \]
+    This tells us how much to trust reported accuracies. With $n=100$ and $\hat{p}=0.90$, the 95\% CI is $[0.84, 0.96]$---substantial uncertainty!
+\end{remark}
+
+\begin{example}[Sample Size for Reliable Evaluation]
+    How many test examples do we need to distinguish 90\% accuracy from 92\% accuracy with 95\% confidence?
+
+    The standard error at $p \approx 0.91$ is $\sqrt{0.91 \times 0.09 / n} \approx 0.29/\sqrt{n}$.
+
+    For the 95\% CIs to not overlap, we need roughly $1.96 \times 0.29/\sqrt{n} < 0.01$, giving $n > 3200$.
+
+    This explains why ML benchmarks use large test sets---small differences are statistically meaningless without enough data.
+\end{example}
+
+\begin{remark}[Bootstrap and Ensemble Methods]
+    The CLT justifies \textbf{bootstrap} methods: if we resample our dataset many times and compute a statistic each time, the distribution of that statistic is approximately Gaussian. This allows uncertainty quantification without distributional assumptions.
+
+    For \textbf{ensemble methods}, averaging $k$ independent model predictions reduces variance by $1/k$. If individual model errors are approximately i.i.d., the ensemble error is approximately Gaussian with smaller variance.
+\end{remark}
+
+\begin{remark}[Weight Initialization]
+    In neural networks, each neuron computes $z = \sum_{i=1}^n w_i x_i$. If weights and inputs are independent with zero mean, CLT suggests $z$ is approximately Gaussian. This motivates initializations like Xavier/Glorot ($\mathrm{Var}(w) = 1/n$) to keep activations well-scaled throughout the network.
+\end{remark}
+
+\begin{center}
+    \begin{tikzpicture}[scale=0.9]
+        % Network diagram
+        \node[circle, draw, minimum size=0.8cm] (x1) at (0, 2) {$x_1$};
+        \node[circle, draw, minimum size=0.8cm] (x2) at (0, 1) {$x_2$};
+        \node at (0, 0.3) {$\vdots$};
+        \node[circle, draw, minimum size=0.8cm] (xn) at (0, -0.5) {$x_n$};
+
+        \node[circle, draw, fill=blue!20, minimum size=1cm] (z) at (3, 0.75) {$z$};
+
+        \draw[->] (x1) -- node[above, font=\small] {$w_1$} (z);
+        \draw[->] (x2) -- node[above, font=\small] {$w_2$} (z);
+        \draw[->] (xn) -- node[below, font=\small] {$w_n$} (z);
+
+        % Formula
+        \node[right, font=\small] at (4, 0.75) {$z = \sum_{i=1}^n w_i x_i$};
+
+        % Distribution
+        \draw[->] (5.5, 0.75) -- (6.5, 0.75);
+
+        \begin{scope}[xshift=7cm, yshift=0.25cm]
+            \draw[->] (0,0) -- (3,0);
+            \draw[->] (1.5,-0.1) -- (1.5, 1.2);
+            \draw[thick, blue, domain=0:3, samples=50] plot (\x, {exp(-2*(\x-1.5)^2)});
+            \node[below, font=\small] at (1.5, -0.2) {CLT: $z \approx \mathcal{N}(0, \sigma^2)$};
+        \end{scope}
+    \end{tikzpicture}
+\end{center}
+
+\begin{remark}[When CLT Fails]
+    The CLT requires finite variance. Heavy-tailed distributions (e.g., Cauchy, some power laws) violate this. In ML:
+    \begin{itemize}
+        \item Gradient clipping addresses occasional huge gradients that would violate CLT assumptions.
+        \item Robust statistics (median, trimmed mean) handle outliers that CLT-based methods struggle with.
+    \end{itemize}
+\end{remark}
+
 \section{Binary Classification Metrics}
 
 \begin{definition}[Confusion Matrix Terminology]

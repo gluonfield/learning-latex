@@ -278,6 +278,91 @@ The Bellman equations transform an intractable problem (optimize over infinite t
     The Bellman equation is not an alternative to policy gradient---it's a tool used \emph{within} policy gradient methods.
 \end{remark}
 
+\section{Temporal Difference Learning}
+
+TD learning bridges Monte Carlo methods (which wait for complete episodes) and dynamic programming (which requires a model).
+
+\begin{definition}[TD(0) Update]
+    After observing transition $(s_t, a_t, r_t, s_{t+1})$, update the value function:
+    \[
+        V(s_t) \leftarrow V(s_t) + \alpha \underbrace{\bigl[ r_t + \gamma V(s_{t+1}) - V(s_t) \bigr]}_{\delta_t \text{ (TD error)}}.
+    \]
+    The TD error $\delta_t$ measures how ``surprised'' we are: if $r_t + \gamma V(s_{t+1}) > V(s_t)$, the outcome was better than expected.
+\end{definition}
+
+\begin{center}
+    \begin{tikzpicture}[>=stealth]
+        % Timeline
+        \draw[thick, ->] (0,0) -- (10,0) node[right] {time};
+
+        % States
+        \node[circle, draw, fill=blue!20, minimum size=8mm] (s0) at (1,0) {$s_t$};
+        \node[circle, draw, fill=blue!20, minimum size=8mm] (s1) at (5,0) {$s_{t+1}$};
+        \node[circle, draw, fill=blue!20, minimum size=8mm] (s2) at (9,0) {$s_{t+2}$};
+
+        % Arrows with rewards
+        \draw[->, thick] (s0) -- node[above] {$a_t$} node[below, green!50!black] {$r_t$} (s1);
+        \draw[->, thick] (s1) -- node[above] {$a_{t+1}$} node[below, green!50!black] {$r_{t+1}$} (s2);
+
+        % TD target annotation
+        \draw[decorate, decoration={brace, amplitude=8pt, raise=2pt}] (1,0.8) -- (5,0.8)
+        node[midway, above=10pt] {TD target: $r_t + \gamma V(s_{t+1})$};
+
+        % Monte Carlo annotation
+        \draw[decorate, decoration={brace, amplitude=8pt, raise=2pt, mirror}] (1,-0.8) -- (9,-0.8)
+        node[midway, below=10pt] {MC target: $r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots$};
+    \end{tikzpicture}
+\end{center}
+
+\begin{remark}[TD vs Monte Carlo]
+    \begin{center}
+        \begin{tabular}{l|cc}
+                     & \textbf{Monte Carlo}                         & \textbf{TD(0)}             \\
+            \hline
+            Updates  & End of episode                               & Every step                 \\
+            Target   & $G_t = \sum_{k=0}^{\infty} \gamma^k r_{t+k}$ & $r_t + \gamma V(s_{t+1})$  \\
+            Bias     & Unbiased                                     & Biased (uses estimate $V$) \\
+            Variance & High                                         & Lower                      \\
+            Requires & Complete episodes                            & Only $(s,a,r,s')$ tuples   \\
+        \end{tabular}
+    \end{center}
+    TD methods \emph{bootstrap}---they update estimates based on other estimates. This introduces bias but dramatically reduces variance.
+\end{remark}
+
+\begin{definition}[TD($\lambda$) and Eligibility Traces]
+    TD($\lambda$) interpolates between TD(0) ($\lambda=0$) and Monte Carlo ($\lambda=1$):
+    \[
+        G_t^\lambda = (1-\lambda) \sum_{n=1}^{\infty} \lambda^{n-1} G_t^{(n)}
+    \]
+    where $G_t^{(n)} = r_t + \gamma r_{t+1} + \cdots + \gamma^{n-1} r_{t+n-1} + \gamma^n V(s_{t+n})$ is the $n$-step return.
+
+    Equivalently, using \emph{eligibility traces}:
+    \[
+        e_t(s) = \gamma \lambda e_{t-1}(s) + \mathbf{1}[s_t = s], \quad V(s) \leftarrow V(s) + \alpha \delta_t e_t(s).
+    \]
+\end{definition}
+
+\begin{center}
+    \begin{tikzpicture}
+        \draw[->] (0,0) -- (6,0) node[right] {$\lambda$};
+        \draw[->] (0,0) -- (0,3) node[above] {Bias/Variance};
+
+        % Bias curve (decreasing)
+        \draw[thick, blue] plot[smooth, domain=0:5] (\x, {2.5*exp(-0.5*\x)});
+        \node[blue, right] at (5.2, 0.3) {Bias};
+
+        % Variance curve (increasing)
+        \draw[thick, red] plot[smooth, domain=0:5] (\x, {0.3 + 0.4*\x});
+        \node[red, right] at (5.2, 2.3) {Variance};
+
+        % Labels
+        \node[below] at (0,0) {$0$};
+        \node[below] at (5,0) {$1$};
+        \node[below] at (0,-0.3) {\scriptsize TD(0)};
+        \node[below] at (5,-0.3) {\scriptsize MC};
+    \end{tikzpicture}
+\end{center}
+
 \section{Policy Gradient Methods}
 
 When the policy is parameterized by $\theta$, we directly optimize the expected return.
@@ -454,8 +539,63 @@ The discounted sum $\sum_{t=0}^{\infty} \gamma^t R_t$ with $\gamma \in [0,1)$ is
         \log p_\theta(\tau) = \underbrace{\log p_0(s_0)}_{\text{no } \theta} + \sum_t \underbrace{\log \pi_\theta(a_t|s_t)}_{\text{depends on } \theta} + \sum_t \underbrace{\log P(s_{t+1}|s_t,a_t)}_{\text{no } \theta}.
     \]
     Only $\pi_\theta$ terms depend on $\theta$, so $\nabla_\theta \log p_\theta(\tau) = \sum_{t} \nabla_\theta \log \pi_\theta(a_t | s_t)$.
-    Substituting and using causality yields the result.
+
+    Substituting with $R(\tau) = \sum_{t=0}^{\infty} \gamma^t R_t$:
+    \[
+        \nabla_\theta J = \mathbb{E}\left[ \left(\sum_{t'} \gamma^{t'} R_{t'}\right) \left(\sum_t \nabla_\theta \log \pi_\theta(a_t|s_t)\right) \right].
+    \]
+
+    \textbf{The Causality Argument:} Consider the cross terms $R_{t'} \cdot \nabla_\theta \log \pi_\theta(a_t|s_t)$ for $t' < t$:
+    \begin{itemize}
+        \item $R_{t'}$ depends only on $(s_{t'}, a_{t'})$, which are determined \emph{before} action $a_t$ is chosen.
+        \item $\nabla_\theta \log \pi_\theta(a_t|s_t)$ depends on action $a_t$.
+        \item Since $a_t \sim \pi_\theta(\cdot|s_t)$ is sampled \emph{independently} of the past reward $R_{t'}$ (given $s_t$):
+    \end{itemize}
+    \[
+        \mathbb{E}\bigl[R_{t'} \cdot \nabla_\theta \log \pi_\theta(a_t|s_t)\bigr] = \mathbb{E}[R_{t'}] \cdot \underbrace{\mathbb{E}_{a_t}\bigl[\nabla_\theta \log \pi_\theta(a_t|s_t)\bigr]}_{= 0}.
+    \]
+    The second factor is zero because $\mathbb{E}_{a \sim \pi}[\nabla \log \pi(a)] = \sum_a \pi(a) \frac{\nabla \pi(a)}{\pi(a)} = \nabla \sum_a \pi(a) = \nabla 1 = 0$.
+
+    Thus, only $t' \geq t$ terms contribute. Rearranging:
+    \[
+        \nabla_\theta J = \mathbb{E}\left[ \sum_t \nabla_\theta \log \pi_\theta(a_t|s_t) \cdot \underbrace{\sum_{t' \geq t} \gamma^{t'} R_{t'}}_{= \gamma^t G_t} \right] = \mathbb{E}\left[ \sum_t \gamma^t \nabla_\theta \log \pi_\theta(a_t|s_t) \cdot G_t \right].
+    \]
+    (The $\gamma^t$ can be absorbed into how we weight time steps, giving the stated form.) \qedhere
 \end{proof}
+
+\begin{remark}[Intuition for Causality]
+    The action at time $t$ cannot influence rewards that already happened ($t' < t$). Including past rewards in the gradient estimate only adds noise---they're independent of the action we're evaluating. By using $G_t$ (future returns only), we reduce variance without introducing bias.
+
+    \begin{center}
+        \begin{tikzpicture}[>=stealth]
+            \draw[thick] (0,0) -- (10,0);
+            \foreach \t in {0,1,2,3,4,5} {
+                    \node[circle, draw, fill=blue!20, minimum size=5mm, font=\scriptsize] (s\t) at (1.8*\t, 0) {$t{=}\t$};
+                }
+
+            % Highlight action at t=2
+            \node[circle, draw, fill=red!30, minimum size=5mm, font=\scriptsize] at (3.6, 0) {$a_2$};
+
+            % Past rewards (crossed out)
+            \draw[thick, red] (0.6, 0.4) -- (1.2, -0.4);
+            \draw[thick, red] (0.6, -0.4) -- (1.2, 0.4);
+            \node[below, font=\scriptsize] at (0.9, -0.5) {$R_0$};
+
+            \draw[thick, red] (2.4, 0.4) -- (3.0, -0.4);
+            \draw[thick, red] (2.4, -0.4) -- (3.0, 0.4);
+            \node[below, font=\scriptsize] at (2.7, -0.5) {$R_1$};
+
+            % Future rewards (included)
+            \node[below, font=\scriptsize, green!50!black] at (4.5, -0.5) {$R_2$};
+            \node[below, font=\scriptsize, green!50!black] at (6.3, -0.5) {$R_3$};
+            \node[below, font=\scriptsize, green!50!black] at (8.1, -0.5) {$R_4$};
+
+            % Annotation
+            \draw[decorate, decoration={brace, amplitude=5pt, raise=2pt}] (4.5, -0.8) -- (8.1, -0.8)
+            node[midway, below=8pt, font=\scriptsize] {$G_2 = R_2 + \gamma R_3 + \gamma^2 R_4 + \cdots$};
+        \end{tikzpicture}
+    \end{center}
+\end{remark}
 
 \begin{definition}[Policy Gradient Methods]
     A \emph{policy gradient} algorithm directly maximizes $J(\theta)$ by stochastic gradient ascent on the parameters of a differentiable policy $\pi_\theta$.
@@ -482,6 +622,116 @@ The discounted sum $\sum_{t=0}^{\infty} \gamma^t R_t$ with $\gamma \in [0,1)$ is
     \]
     The optimal baseline (minimizing variance) is $b(s_t) = V^\pi(s_t)$. With this choice, $G_t - V^\pi(s_t)$ is an estimate of the advantage $A^\pi(s_t, a_t) = Q^\pi(s_t, a_t) - V^\pi(s_t)$.
 \end{remark}
+
+\subsection{Actor-Critic Methods}
+
+The Actor-Critic architecture combines policy gradient (actor) with value function learning (critic).
+
+\begin{definition}[Actor-Critic]
+    An \emph{actor-critic} algorithm maintains two components:
+    \begin{itemize}
+        \item \textbf{Actor} $\pi_\theta(a|s)$: the policy, updated via policy gradient.
+        \item \textbf{Critic} $V_\phi(s)$ or $Q_\phi(s,a)$: estimates value, updated via TD learning.
+    \end{itemize}
+    The critic provides low-variance advantage estimates for the actor's gradient.
+\end{definition}
+
+\begin{center}
+    \begin{tikzpicture}[>=stealth, box/.style={rectangle, draw, rounded corners, minimum width=2.5cm, minimum height=1cm}]
+        % Environment
+        \node[box, fill=gray!20] (env) at (0,0) {Environment};
+
+        % Actor
+        \node[box, fill=red!20] (actor) at (-3, 2.5) {Actor $\pi_\theta$};
+
+        % Critic
+        \node[box, fill=blue!20] (critic) at (3, 2.5) {Critic $V_\phi$};
+
+        % Arrows
+        \draw[->, thick] (env) -- node[left, font=\scriptsize] {$s_t$} (-1.5, 1.2) -- (actor);
+        \draw[->, thick] (env) -- node[right, font=\scriptsize] {$s_t, r_t$} (1.5, 1.2) -- (critic);
+        \draw[->, thick] (actor) -- node[left, font=\scriptsize] {$a_t$} (-1.5, -0.5) -- (env);
+
+        % Critic to Actor
+        \draw[->, thick, dashed, blue] (critic) -- node[above, font=\scriptsize] {$\hat{A}_t$} (actor);
+
+        % Update arrows
+        \draw[->, thick, red] (actor.north) -- ++(0, 0.5) node[above, font=\scriptsize] {$\theta \leftarrow \theta + \alpha \nabla \log \pi \cdot \hat{A}$};
+        \draw[->, thick, blue] (critic.north) -- ++(0, 0.5) node[above, font=\scriptsize] {$\phi \leftarrow \phi - \alpha \nabla (V - \text{target})^2$};
+    \end{tikzpicture}
+\end{center}
+
+\begin{remark}[Why Actor-Critic?]
+    \begin{center}
+        \begin{tabular}{l|ccc}
+                               & \textbf{REINFORCE} & \textbf{Actor-Critic} & \textbf{Pure Critic (DQN)} \\
+            \hline
+            Variance           & High               & Low                   & N/A                        \\
+            Bias               & None               & Some (from $V$)       & None                       \\
+            Continuous actions & Yes                & Yes                   & No                         \\
+            Sample efficiency  & Low                & Medium                & High                       \\
+        \end{tabular}
+    \end{center}
+\end{remark}
+
+\subsection{Generalized Advantage Estimation (GAE)}
+
+GAE provides a practical way to estimate advantages with controllable bias-variance tradeoff.
+
+\begin{definition}[Generalized Advantage Estimation]
+    Given TD errors $\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$, the GAE estimator is:
+    \[
+        \hat{A}_t^{\text{GAE}(\gamma, \lambda)} = \sum_{l=0}^{\infty} (\gamma \lambda)^l \delta_{t+l} = \delta_t + \gamma \lambda \delta_{t+1} + (\gamma \lambda)^2 \delta_{t+2} + \cdots
+    \]
+    where $\lambda \in [0,1]$ controls bias-variance tradeoff.
+\end{definition}
+
+\begin{remark}[GAE Special Cases]
+    \begin{itemize}
+        \item $\lambda = 0$: $\hat{A}_t = \delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$ (1-step TD, high bias, low variance)
+        \item $\lambda = 1$: $\hat{A}_t = \sum_{l=0}^{\infty} \gamma^l \delta_{t+l} = G_t - V(s_t)$ (Monte Carlo, no bias, high variance)
+    \end{itemize}
+    In practice, $\lambda \approx 0.95$ works well---enough bootstrapping to reduce variance, but not so much that bias dominates.
+\end{remark}
+
+\begin{center}
+    \begin{tikzpicture}[>=stealth]
+        % Timeline
+        \draw[thick] (0,0) -- (12,0);
+
+        % States and deltas
+        \foreach \i in {0,1,2,3,4} {
+                \node[circle, draw, fill=blue!20, minimum size=6mm, font=\scriptsize] (s\i) at (2.4*\i, 0) {$s_{t+\i}$};
+            }
+
+        % Delta labels
+        \foreach \i/\next in {0/1, 1/2, 2/3, 3/4} {
+                \draw[->, thick] (s\i) -- node[above, font=\scriptsize] {$\delta_{t+\i}$} (s\next);
+            }
+
+        % GAE sum visualization
+        \node[below=1.5cm of s0, font=\small] {$\hat{A}_t^{\text{GAE}} = \delta_t$};
+        \node[below=1.5cm of s1, font=\small] {$+ \gamma\lambda \delta_{t+1}$};
+        \node[below=1.5cm of s2, font=\small] {$+ (\gamma\lambda)^2 \delta_{t+2}$};
+        \node[below=1.5cm of s3, font=\small] {$+ \cdots$};
+
+        % Weights visualization
+        \draw[thick, red, opacity=0.6] (0, -0.5) rectangle (0.8, -0.3);
+        \draw[thick, red, opacity=0.4] (2.4, -0.5) rectangle (2.9, -0.3);
+        \draw[thick, red, opacity=0.25] (4.8, -0.5) rectangle (5.15, -0.3);
+        \draw[thick, red, opacity=0.15] (7.2, -0.5) rectangle (7.4, -0.3);
+
+        \node[right, font=\scriptsize, red] at (8, -0.4) {weights decay as $(\gamma\lambda)^l$};
+    \end{tikzpicture}
+\end{center}
+
+\begin{proposition}[GAE as Exponentially-Weighted Average]
+    GAE can be written as:
+    \[
+        \hat{A}_t^{\text{GAE}} = (1-\lambda) \sum_{n=1}^{\infty} \lambda^{n-1} \hat{A}_t^{(n)}
+    \]
+    where $\hat{A}_t^{(n)} = \sum_{l=0}^{n-1} \gamma^l r_{t+l} + \gamma^n V(s_{t+n}) - V(s_t)$ is the $n$-step advantage estimate. This shows GAE averages over all $n$-step estimates, with exponentially decaying weights.
+\end{proposition}
 
 \section{Proximal Policy Optimization (PPO)}
 
@@ -540,13 +790,89 @@ The problem: if $r_t(\theta)$ becomes very large, the surrogate $\mathcal{L}^{\t
 \end{definition}
 
 \begin{remark}[How Clipping Works]
-    Consider what happens for a ``good'' action ($A_t > 0$):
+    The clipping behaves differently depending on whether the action was good ($A_t > 0$) or bad ($A_t < 0$):
+
+    \textbf{Case 1: Good action ($A_t > 0$)}
     \begin{itemize}
         \item If $r_t < 1 - \epsilon$: action became less likely. Gradient pushes to increase $r_t$.
         \item If $r_t \in [1-\epsilon, 1+\epsilon]$: normal gradient, objective is $r_t \cdot A_t$.
-        \item If $r_t > 1 + \epsilon$: action became much more likely. The $\min$ kicks in, gradient becomes zero---no incentive to increase $r_t$ further.
+        \item If $r_t > 1 + \epsilon$: action became much more likely. The $\min$ kicks in, objective becomes $(1+\epsilon) A_t$---flat, no gradient to increase $r_t$ further.
     \end{itemize}
-    For ``bad'' actions ($A_t < 0$), the logic flips. The net effect: the new policy cannot move too far from the old one in a single update.
+
+    \textbf{Case 2: Bad action ($A_t < 0$)}
+    \begin{itemize}
+        \item If $r_t > 1 + \epsilon$: action became more likely (bad!). Gradient pushes to decrease $r_t$.
+        \item If $r_t \in [1-\epsilon, 1+\epsilon]$: normal gradient, objective is $r_t \cdot A_t$ (negative).
+        \item If $r_t < 1 - \epsilon$: action became much less likely. The $\min$ kicks in (clipped value is less negative), objective becomes $(1-\epsilon) A_t$---flat, no further decrease.
+    \end{itemize}
+\end{remark}
+
+\begin{center}
+    \begin{tikzpicture}[scale=0.9]
+        % Left plot: A > 0
+        \begin{scope}[shift={(-5,0)}]
+            \draw[->] (0,0) -- (5,0) node[right] {$r_t$};
+            \draw[->] (0,-0.5) -- (0,3) node[above] {$\mathcal{L}$};
+
+            % Clip region
+            \fill[blue!10] (1.5,0) rectangle (3.5,2.8);
+
+            % Unclipped line
+            \draw[thick, gray, dashed] (0,0) -- (4.5, 2.7);
+
+            % Clipped objective
+            \draw[thick, blue] (0,0) -- (1.5, 0.9);
+            \draw[thick, blue] (1.5, 0.9) -- (3.5, 2.1);
+            \draw[thick, blue] (3.5, 2.1) -- (4.5, 2.1);
+
+            % Labels
+            \node[below] at (1.5,0) {\scriptsize $1{-}\epsilon$};
+            \node[below] at (3.5,0) {\scriptsize $1{+}\epsilon$};
+            \node[below] at (2.5,0) {\scriptsize $1$};
+
+            \node[above, font=\small] at (2.5, 3) {$A_t > 0$ (good action)};
+
+            % Annotations
+            \draw[<-, thick, red] (4, 2.1) -- (4.3, 2.6) node[right, font=\scriptsize] {clipped: no incentive};
+            \node[font=\scriptsize, gray] at (3.8, 1) {unclipped};
+        \end{scope}
+
+        % Right plot: A < 0
+        \begin{scope}[shift={(3,0)}]
+            \draw[->] (0,0) -- (5,0) node[right] {$r_t$};
+            \draw[->] (0,-2.5) -- (0,0.5) node[above] {$\mathcal{L}$};
+
+            % Clip region
+            \fill[red!10] (1.5,-2.3) rectangle (3.5,0.3);
+
+            % Unclipped line
+            \draw[thick, gray, dashed] (0,0) -- (4.5, -2.7);
+
+            % Clipped objective
+            \draw[thick, red] (0,-0.9) -- (1.5, -0.9);
+            \draw[thick, red] (1.5, -0.9) -- (3.5, -2.1);
+            \draw[thick, red] (3.5, -2.1) -- (4.5, -2.1);
+
+            % Labels
+            \node[below] at (1.5,0) {\scriptsize $1{-}\epsilon$};
+            \node[below] at (3.5,0) {\scriptsize $1{+}\epsilon$};
+            \node[below] at (2.5,0) {\scriptsize $1$};
+
+            \node[above, font=\small] at (2.5, 0.8) {$A_t < 0$ (bad action)};
+
+            % Annotations
+            \draw[<-, thick, red] (0.5, -0.9) -- (0.2, -0.4) node[left, font=\scriptsize] {clipped: stop decreasing};
+        \end{scope}
+    \end{tikzpicture}
+\end{center}
+
+\begin{remark}[The Pessimistic Bound]
+    The $\min$ in PPO is \emph{pessimistic}---it takes the lower of the clipped and unclipped objectives. This ensures:
+    \begin{itemize}
+        \item We never get ``credit'' for making a good action too likely ($r_t > 1+\epsilon$).
+        \item We never get ``credit'' for making a bad action too unlikely ($r_t < 1-\epsilon$).
+    \end{itemize}
+    The effect: the policy can improve within the trust region, but cannot exploit the surrogate objective by moving too far.
 \end{remark}
 
 \begin{remark}[Notation: $J$ vs $\mathcal{L}$]
@@ -613,6 +939,58 @@ Fine-tuning language models with RL proceeds in three stages:
     \item \textbf{Reward Modeling}: Train a reward model $r_\phi(x, y)$ on human preference data.
     \item \textbf{RL Fine-Tuning}: Optimize the policy against the reward model.
 \end{enumerate}
+
+\begin{center}
+    \begin{tikzpicture}[
+            >=stealth,
+            stage/.style={rectangle, draw, rounded corners, minimum width=3cm, minimum height=1.2cm, align=center},
+            data/.style={rectangle, draw, dashed, minimum width=2.5cm, minimum height=0.8cm, align=center, font=\scriptsize},
+            arrow/.style={->, thick}
+        ]
+        % Stage 1: SFT
+        \node[stage, fill=green!20] (sft) at (0, 0) {Stage 1:\\SFT};
+        \node[data, above=0.5cm of sft] (sft_data) {Demonstrations\\$(x, y^*)$};
+        \node[below=0.3cm of sft, font=\scriptsize] {$\pi_{\text{ref}} = \pi_{\text{SFT}}$};
+
+        % Stage 2: Reward Model
+        \node[stage, fill=blue!20] (rm) at (5, 0) {Stage 2:\\Reward Model};
+        \node[data, above=0.5cm of rm] (rm_data) {Preferences\\$(x, y_w \succ y_l)$};
+        \node[below=0.3cm of rm, font=\scriptsize] {$r_\phi(x, y)$};
+
+        % Stage 3: RL
+        \node[stage, fill=red!20] (rl) at (10, 0) {Stage 3:\\RL Fine-Tuning};
+        \node[data, above=0.5cm of rl] (rl_data) {Prompts\\$x \sim \mathcal{D}$};
+        \node[below=0.3cm of rl, font=\scriptsize] {$\pi_\theta$};
+
+        % Arrows between stages
+        \draw[arrow] (sft) -- node[above, font=\scriptsize] {init} (rm);
+        \draw[arrow] (rm) -- node[above, font=\scriptsize] {reward} (rl);
+
+        % Feedback loop in RL
+        \draw[arrow, red] (rl.south) -- ++(0, -0.8) -| node[below, pos=0.25, font=\scriptsize] {sample $y \sim \pi_\theta$, score with $r_\phi$} (rl.south west);
+
+        % Data arrows
+        \draw[arrow, dashed] (sft_data) -- (sft);
+        \draw[arrow, dashed] (rm_data) -- (rm);
+        \draw[arrow, dashed] (rl_data) -- (rl);
+
+        % Human label for preferences
+        \node[above=0.3cm of rm_data, font=\scriptsize] {Human labelers};
+    \end{tikzpicture}
+\end{center}
+
+\begin{remark}[Data Requirements]
+    Each stage requires different data:
+    \begin{center}
+        \begin{tabular}{l|l|l}
+            \textbf{Stage} & \textbf{Data Type}                       & \textbf{Typical Size} \\
+            \hline
+            SFT            & High-quality $(x, y)$ pairs              & 10K--100K             \\
+            Reward Model   & Preference comparisons $(y_w \succ y_l)$ & 10K--500K             \\
+            RL             & Prompts only (responses sampled)         & 10K--100K             \\
+        \end{tabular}
+    \end{center}
+\end{remark}
 
 \subsection{The RLHF Objective}
 
@@ -693,6 +1071,78 @@ Fine-tuning language models with RL proceeds in three stages:
         \item \textbf{Preserve capabilities}: $\pi_{\text{ref}}$ (the SFT model) already produces coherent, grammatical text. We want to improve \emph{alignment}, not destroy language ability.
     \end{enumerate}
     The KL term acts as a ``leash''---the policy can improve, but not wander too far from known-good behavior.
+\end{remark}
+
+\begin{remark}[KL Divergence Direction: Why $D_{\mathrm{KL}}(\pi_\theta \| \pi_{\text{ref}})$?]
+    The KL divergence is \emph{asymmetric}: $D_{\mathrm{KL}}(P \| Q) \neq D_{\mathrm{KL}}(Q \| P)$. The two directions have different names and behaviors:
+
+    \begin{definition}[KL Divergence Directions]
+        For distributions $P$ and $Q$:
+        \begin{align*}
+            \textbf{Forward KL:} \quad D_{\mathrm{KL}}(P \| Q) & = \mathbb{E}_{x \sim P}\left[\log \frac{P(x)}{Q(x)}\right] \quad \text{(expectation under $P$)} \\[6pt]
+            \textbf{Reverse KL:} \quad D_{\mathrm{KL}}(Q \| P) & = \mathbb{E}_{x \sim Q}\left[\log \frac{Q(x)}{P(x)}\right] \quad \text{(expectation under $Q$)}
+        \end{align*}
+        The naming convention: $P$ is the ``target'' or ``true'' distribution, $Q$ is the ``approximation.''
+    \end{definition}
+
+    In RLHF, $\pi_{\text{ref}}$ is the reference (playing the role of $P$) and $\pi_\theta$ is what we're learning (playing the role of $Q$). We use:
+    \[
+        D_{\mathrm{KL}}(\underbrace{\pi_\theta}_{Q} \| \underbrace{\pi_{\text{ref}}}_{P}) = \mathbb{E}_{y \sim \pi_\theta}\left[\log \frac{\pi_\theta(y|x)}{\pi_{\text{ref}}(y|x)}\right] \quad \textbf{(Reverse KL: $D_{\mathrm{KL}}(Q \| P)$)}
+    \]
+    This is reverse KL because the \textbf{expectation is taken under $\pi_\theta$} (the distribution we're learning), not under $\pi_{\text{ref}}$ (the reference).
+
+    \textbf{Why does RLHF use reverse KL?} The two directions have very different behaviors:
+
+    \begin{center}
+        \begin{tikzpicture}[scale=0.8]
+            % Forward KL
+            \begin{scope}[shift={(-4,0)}]
+                \draw[->] (0,0) -- (5,0) node[right] {$y$};
+                \draw[->] (0,0) -- (0,2.5);
+
+                % Target P (bimodal)
+                \draw[thick, blue, domain=0:5, samples=50] plot (\x, {1.2*exp(-2*(\x-1.3)^2) + 1.2*exp(-2*(\x-3.7)^2)});
+                \node[blue] at (2.5, 2.2) {$P$ (target)};
+
+                % Approximation Q (wide, covers both)
+                \draw[thick, red, domain=0:5, samples=50] plot (\x, {1.0*exp(-0.15*(\x-2.5)^2)});
+                \node[red] at (2.5, 0.5) {$Q$};
+
+                \node[below, font=\small, align=center] at (2.5, -0.3) {\textbf{Forward KL}: $D_{\mathrm{KL}}(P \| Q)$};
+                \node[below, font=\scriptsize, align=center] at (2.5, -0.9) {``Mode-covering''\\$Q$ must cover all of $P$};
+            \end{scope}
+
+            % Reverse KL
+            \begin{scope}[shift={(4,0)}]
+                \draw[->] (0,0) -- (5,0) node[right] {$y$};
+                \draw[->] (0,0) -- (0,2.5);
+
+                % Target P (bimodal)
+                \draw[thick, blue, domain=0:5, samples=50] plot (\x, {1.2*exp(-2*(\x-1.3)^2) + 1.2*exp(-2*(\x-3.7)^2)});
+                \node[blue] at (2.5, 2.2) {$P$ (target)};
+
+                % Approximation Q (narrow, picks one mode)
+                \draw[thick, red, domain=0:5, samples=50] plot (\x, {1.8*exp(-1.5*(\x-1.3)^2)});
+                \node[red] at (3.5, 0.5) {$Q$};
+
+                \node[below, font=\small, align=center] at (2.5, -0.3) {\textbf{Reverse KL}: $D_{\mathrm{KL}}(Q \| P)$};
+                \node[below, font=\scriptsize, align=center] at (2.5, -0.9) {``Mode-seeking''\\$Q$ locks onto one mode};
+            \end{scope}
+        \end{tikzpicture}
+    \end{center}
+
+    \begin{itemize}
+        \item \textbf{Forward KL} $D_{\mathrm{KL}}(P \| Q)$: Expectation under $P$. Penalizes $Q$ whenever $P(x) > 0$ but $Q(x) \approx 0$. Effect: $Q$ must \emph{cover} all modes of $P$, even if it means spreading mass where $P$ is low. This is \textbf{mode-covering} (also called ``mean-seeking'' or ``inclusive'').
+
+        \item \textbf{Reverse KL} $D_{\mathrm{KL}}(Q \| P)$: Expectation under $Q$. Penalizes $Q$ whenever $Q(x) > 0$ but $P(x) \approx 0$. Effect: $Q$ avoids placing mass where $P$ is low, typically \emph{locking onto} a single mode of $P$. This is \textbf{mode-seeking} (also called ``zero-forcing'' or ``exclusive'').
+    \end{itemize}
+
+    \textbf{In RLHF}, we use reverse KL $D_{\mathrm{KL}}(\pi_\theta \| \pi_{\text{ref}})$ because:
+    \begin{enumerate}
+        \item The expectation is under $\pi_\theta$, which we can sample from (we generate from the policy).
+        \item Mode-seeking behavior is desirable: we want $\pi_\theta$ to concentrate on high-quality outputs rather than spreading probability to cover everything $\pi_{\text{ref}}$ might generate.
+        \item If $\pi_\theta$ tries to put mass where $\pi_{\text{ref}}$ has near-zero probability, the penalty $\log(\pi_\theta / \pi_{\text{ref}}) \to +\infty$ explodes. This prevents the policy from generating outputs that the reference model would never produce.
+    \end{enumerate}
 \end{remark}
 
 \begin{remark}[When to Question the KL Penalty]
@@ -827,6 +1277,91 @@ IPO addresses potential overfitting in DPO by using a different loss formulation
     IPO uses a squared loss that targets a fixed margin $1/(2\beta)$ between log-ratios, rather than pushing them apart indefinitely as in DPO.
 \end{remark}
 
+\subsection{Visualizing DPO vs IPO vs SLiC-HF}
+
+The key difference between these methods is how their loss behaves as the margin $m = \hat{r}_w - \hat{r}_l$ (implicit reward difference) changes:
+
+\begin{center}
+    \begin{tikzpicture}[scale=0.85]
+        \draw[->] (-4,0) -- (5,0) node[right] {$m = \hat{r}_w - \hat{r}_l$};
+        \draw[->] (0,-0.5) -- (0,4) node[above] {Loss};
+
+        % Target margin for IPO
+        \draw[dashed, gray] (1.5, -0.3) -- (1.5, 3.5);
+        \node[below, gray, font=\scriptsize] at (1.5, -0.3) {$\frac{1}{2\beta}$};
+
+        % SLiC-HF margin
+        \draw[dashed, gray] (2, -0.3) -- (2, 3.5);
+        \node[below, gray, font=\scriptsize] at (2, -0.3) {$\delta$};
+
+        % DPO: -log(sigmoid(m)) = log(1 + exp(-m))
+        \draw[thick, blue, domain=-3.5:4.5, samples=100] plot (\x, {ln(1 + exp(-\x))});
+        \node[blue, right] at (4.5, 0.2) {DPO};
+
+        % IPO: (m - target)^2
+        \draw[thick, red, domain=-2:4.5, samples=100] plot (\x, {0.4*(\x - 1.5)^2});
+        \node[red, right] at (4.5, 1.8) {IPO};
+
+        % SLiC-HF: max(0, delta - m)
+        \draw[thick, green!50!black, domain=-3.5:2] plot (\x, {2 - \x});
+        \draw[thick, green!50!black] (2,0) -- (4.5,0);
+        \node[green!50!black, right] at (3, 0.3) {SLiC-HF};
+
+        % Key points
+        \node[below] at (0,0) {$0$};
+
+        % Legend annotations
+        \node[font=\scriptsize, align=left] at (-2.5, 3.5) {DPO: keeps pushing\\apart indefinitely};
+        \node[font=\scriptsize, align=left] at (3, 3.2) {IPO: targets\\fixed margin};
+    \end{tikzpicture}
+\end{center}
+
+\begin{remark}[Comparing Loss Behaviors]
+    \begin{itemize}
+        \item \textbf{DPO} ($-\log \sigma(m)$): Loss $\to 0$ as $m \to \infty$. The model is always incentivized to increase the margin further. This can lead to \emph{over-optimization}---the model keeps pushing probabilities to extremes even after the preference is satisfied.
+
+        \item \textbf{IPO} ($(m - \frac{1}{2\beta})^2$): Loss is minimized at $m = \frac{1}{2\beta}$. Once the target margin is achieved, pushing further \emph{increases} the loss. This prevents over-optimization.
+
+        \item \textbf{SLiC-HF} ($\max(0, \delta - m)$): Loss is exactly zero once $m \geq \delta$. No gradient once the margin is satisfied---the model stops optimizing this pair entirely.
+    \end{itemize}
+\end{remark}
+
+\begin{remark}[Gradient Magnitude Comparison]
+    The gradient magnitude reveals how aggressively each method learns:
+
+    \begin{center}
+        \begin{tikzpicture}[scale=0.85]
+            \draw[->] (-4,0) -- (5,0) node[right] {$m = \hat{r}_w - \hat{r}_l$};
+            \draw[->] (0,-2) -- (0,2) node[above] {$\frac{\partial \mathcal{L}}{\partial m}$};
+
+            % DPO gradient: -sigmoid(-m) = -(1/(1+exp(m)))
+            \draw[thick, blue, domain=-3.5:4.5, samples=100] plot (\x, {-1/(1 + exp(\x))});
+            \node[blue] at (2, -1.2) {DPO};
+
+            % IPO gradient: 2(m - target)
+            \draw[thick, red, domain=-2:4, samples=50] plot (\x, {0.5*(\x - 1.5)});
+            \node[red] at (4, 1.5) {IPO};
+
+            % SLiC gradient: -1 for m < delta, 0 otherwise
+            \draw[thick, green!50!black] (-3.5, -1) -- (2, -1);
+            \draw[thick, green!50!black] (2, 0) -- (4.5, 0);
+            \fill[green!50!black] (2, -1) circle (2pt);
+            \draw[green!50!black, fill=white] (2, 0) circle (2pt);
+            \node[green!50!black] at (0, -1.4) {SLiC};
+
+            \node[below] at (0,0) {$0$};
+            \draw[dashed, gray] (1.5, -1.8) -- (1.5, 1.8);
+            \node[below, gray, font=\scriptsize] at (1.5, -1.8) {target};
+        \end{tikzpicture}
+    \end{center}
+
+    \begin{itemize}
+        \item \textbf{DPO}: Gradient $\to 0$ as $m \to \infty$, but never exactly zero. Always some signal.
+        \item \textbf{IPO}: Gradient flips sign at the target. Pushes back if you overshoot.
+        \item \textbf{SLiC}: Constant gradient until margin reached, then exactly zero.
+    \end{itemize}
+\end{remark}
+
 \section{GRPO: Group Relative Policy Optimization}
 
 GRPO, introduced by DeepSeek, removes the need for a critic network by using group-based advantage estimation.
@@ -913,16 +1448,285 @@ KTO is designed for non-paired preference data (just labels of good/bad, not com
     KTO is inspired by Kahneman and Tversky's prospect theory: humans are loss-averse and evaluate outcomes relative to a reference point, not absolutely.
 \end{remark}
 
-\section{Summary of Loss Functions}
+\section{Comparison of Alignment Methods}
+
+This section provides a comprehensive comparison of all preference optimization and RL alignment methods. The goal is to make each method identifiable by its loss function structure.
+
+\subsection{Quick Reference: Identifying Methods by Loss Function}
 
 \begin{center}
-    \renewcommand{\arraystretch}{1.5}
-    \begin{tabular}{ll}
-        \textbf{Method} & \textbf{Loss Function}                                                                                                                                \\
+    \renewcommand{\arraystretch}{2.2}
+    \begin{tabular}{|l|l|l|}
         \hline
-        Reward Model    & $-\log \sigma(r_\phi(x, y_w) - r_\phi(x, y_l))$                                                                                                       \\
-        DPO             & $-\log \sigma\left( \beta \log \frac{\pi_\theta(y_w|x) / \pi_{\text{ref}}(y_w|x)}{\pi_\theta(y_l|x) / \pi_{\text{ref}}(y_l|x)} \right)$               \\
-        IPO             & $\left( \log \frac{\pi_\theta(y_w|x)}{\pi_{\text{ref}}(y_w|x)} - \log \frac{\pi_\theta(y_l|x)}{\pi_{\text{ref}}(y_l|x)} - \frac{1}{2\beta} \right)^2$ \\
-        GRPO            & PPO-clip on group-normalized advantages                                                                                                               \\
+        \textbf{Method}                                                               & \textbf{Loss Function} & \textbf{Identifying Feature} \\
+        \hline
+        \textbf{PPO}                                                                  &
+        $\min\bigl(r_t A_t, \text{clip}(r_t, 1{\pm}\epsilon) A_t\bigr)$               &
+        Clipped ratio $\times$ advantage                                                                                                      \\
+        \hline
+        \textbf{DPO}                                                                  &
+        $-\log \sigma\bigl(\beta(\hat{r}_w - \hat{r}_l)\bigr)$                        &
+        $\sigma$ of log-ratio \emph{difference}                                                                                               \\
+        \hline
+        \textbf{IPO}                                                                  &
+        $\bigl(\hat{r}_w - \hat{r}_l - \tfrac{1}{2\beta}\bigr)^2$                     &
+        \emph{Squared} loss with margin                                                                                                       \\
+        \hline
+        \textbf{GRPO}                                                                 &
+        $\text{PPO-clip} + \text{group-normalized } A_i$                              &
+        Advantages: $\frac{r_i - \mu}{\sigma}$                                                                                                \\
+        \hline
+        \textbf{RLOO}                                                                 &
+        REINFORCE with $b_i = \frac{1}{G-1}\sum_{j \neq i} r_j$                       &
+        Leave-one-out baseline                                                                                                                \\
+        \hline
+        \textbf{KTO}                                                                  &
+        $w(y)(1 - \sigma(\beta \cdot \text{sign}(y) \cdot \Delta))$                   &
+        Uses $\text{sign}(y)$ for good/bad                                                                                                    \\
+        \hline
+        \textbf{SLiC-HF}                                                              &
+        $\max(0, \delta - \hat{r}_w + \hat{r}_l)$                                     &
+        Hinge loss (margin $\delta$)                                                                                                          \\
+        \hline
+        \textbf{ORPO}                                                                 &
+        $\mathcal{L}_{\text{SFT}} - \lambda \log \sigma(\text{log-odds diff})$        &
+        Combines SFT + odds ratio                                                                                                             \\
+        \hline
+        \textbf{SimPO}                                                                &
+        $-\log \sigma\bigl(\frac{\beta}{|y|}(\log \pi_w - \log \pi_l) - \gamma\bigr)$ &
+        Length-normalized, no $\pi_{\text{ref}}$                                                                                              \\
+        \hline
     \end{tabular}
 \end{center}
+
+\noindent\textbf{Notation}: $\hat{r}_y = \beta \log \frac{\pi_\theta(y|x)}{\pi_{\text{ref}}(y|x)}$ is the implicit reward (log-ratio).
+
+\subsection{Detailed Loss Functions}
+
+For precise implementation, here are the complete loss functions:
+
+\subsubsection{PPO (Proximal Policy Optimization)}
+\[
+    \boxed{\mathcal{L}^{\text{PPO}}(\theta) = -\mathbb{E}_t \left[ \min\left( r_t(\theta) A_t, \; \text{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon) A_t \right) \right]}
+\]
+where $r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{\text{old}}}(a_t|s_t)}$ and $A_t$ is the advantage estimate (typically from GAE).
+
+\textbf{Key identifiers}:
+\begin{itemize}
+    \item Ratio $r_t$ between new and \emph{old} policy (not reference!)
+    \item Clipping to $[1-\epsilon, 1+\epsilon]$
+    \item Requires advantage estimation (critic network or GAE)
+\end{itemize}
+
+\subsubsection{DPO (Direct Preference Optimization)}
+\[
+    \boxed{\mathcal{L}_{\text{DPO}}(\theta) = -\mathbb{E}_{(x, y_w, y_l)} \left[ \log \sigma\left( \beta \log \frac{\pi_\theta(y_w|x)}{\pi_{\text{ref}}(y_w|x)} - \beta \log \frac{\pi_\theta(y_l|x)}{\pi_{\text{ref}}(y_l|x)} \right) \right]}
+\]
+
+\textbf{Equivalent forms}:
+\begin{align*}
+     & = -\mathbb{E} \left[ \log \sigma\left( \beta \log \frac{\pi_\theta(y_w|x) \cdot \pi_{\text{ref}}(y_l|x)}{\pi_\theta(y_l|x) \cdot \pi_{\text{ref}}(y_w|x)} \right) \right] \\
+     & = -\mathbb{E} \left[ \log \sigma\bigl( \hat{r}_w - \hat{r}_l \bigr) \right]
+\end{align*}
+
+\textbf{Key identifiers}:
+\begin{itemize}
+    \item Sigmoid of \emph{difference} of log-ratios
+    \item Requires $\pi_{\text{ref}}$ (reference policy)
+    \item No clipping, no advantage---pure preference loss
+\end{itemize}
+
+\subsubsection{IPO (Identity Preference Optimization)}
+\[
+    \boxed{\mathcal{L}_{\text{IPO}}(\theta) = \mathbb{E}_{(x, y_w, y_l)} \left[ \left( \log \frac{\pi_\theta(y_w|x)}{\pi_{\text{ref}}(y_w|x)} - \log \frac{\pi_\theta(y_l|x)}{\pi_{\text{ref}}(y_l|x)} - \frac{1}{2\beta} \right)^2 \right]}
+\]
+
+\textbf{Key identifiers}:
+\begin{itemize}
+    \item \textbf{Squared loss} (MSE) instead of log-sigmoid
+    \item Targets a fixed margin $\frac{1}{2\beta}$ rather than pushing apart indefinitely
+    \item Prevents overfitting to preference data
+\end{itemize}
+
+\subsubsection{GRPO (Group Relative Policy Optimization)}
+\[
+    \boxed{\mathcal{L}_{\text{GRPO}}(\theta) = -\mathbb{E}_{x} \left[ \frac{1}{G} \sum_{i=1}^{G} \min\left( \rho_i A_i, \, \text{clip}(\rho_i, 1-\epsilon, 1+\epsilon) A_i \right) \right] + \beta \, D_{\mathrm{KL}}(\pi_\theta \| \pi_{\text{ref}})}
+\]
+where $\rho_i = \frac{\pi_\theta(y_i|x)}{\pi_{\theta_{\text{old}}}(y_i|x)}$ and the advantage is group-normalized:
+\[
+    A_i = \frac{r(x, y_i) - \bar{r}}{\sigma_r}, \quad \bar{r} = \frac{1}{G}\sum_{j=1}^{G} r(x, y_j), \quad \sigma_r = \text{std}(\{r_j\}).
+\]
+
+\textbf{Key identifiers}:
+\begin{itemize}
+    \item PPO-style clipping
+    \item \textbf{Group-normalized advantages} (z-score within batch)
+    \item \textbf{No critic network}---advantage from reward normalization
+    \item Explicit KL penalty (not just implicit through reference)
+\end{itemize}
+
+\subsubsection{RLOO (REINFORCE Leave-One-Out)}
+\[
+    \boxed{\mathcal{L}_{\text{RLOO}}(\theta) = -\mathbb{E}_x \left[ \frac{1}{G} \sum_{i=1}^{G} \log \pi_\theta(y_i|x) \cdot \left( r(x, y_i) - \frac{1}{G-1}\sum_{j \neq i} r(x, y_j) \right) \right]}
+\]
+
+\textbf{Key identifiers}:
+\begin{itemize}
+    \item REINFORCE gradient (no clipping)
+    \item \textbf{Leave-one-out baseline}: $b_i = \frac{1}{G-1}\sum_{j \neq i} r_j$
+    \item Preserves reward scale (unlike GRPO's normalization)
+\end{itemize}
+
+\subsubsection{KTO (Kahneman-Tversky Optimization)}
+\[
+    \boxed{\mathcal{L}_{\text{KTO}}(\theta) = \mathbb{E}_{x,y} \left[ \lambda_y \cdot \max\left(0, 1 - \sigma\bigl(\beta \cdot \text{sign}(y)(\hat{r}_y - z_0)\bigr)\right) \right]}
+\]
+where:
+\begin{itemize}
+    \item $\text{sign}(y) = +1$ for desirable, $-1$ for undesirable responses
+    \item $z_0 = \mathbb{E}_{x', y' \sim \mathcal{D}_{\text{desirable}}}[\hat{r}_{y'}]$ is a reference point
+    \item $\lambda_y$ implements loss aversion ($\lambda_{\text{undesirable}} > \lambda_{\text{desirable}}$)
+\end{itemize}
+
+\textbf{Key identifiers}:
+\begin{itemize}
+    \item Uses $\text{sign}(y)$ to handle \textbf{unpaired} good/bad data
+    \item Reference point $z_0$ (prospect theory)
+    \item Asymmetric weighting (loss aversion)
+\end{itemize}
+
+\subsubsection{SLiC-HF (Sequence Likelihood Calibration)}
+\[
+    \boxed{\mathcal{L}_{\text{SLiC}}(\theta) = \mathbb{E}_{(x, y_w, y_l)} \left[ \max\left(0, \delta - \log \frac{\pi_\theta(y_w|x)}{\pi_{\text{ref}}(y_w|x)} + \log \frac{\pi_\theta(y_l|x)}{\pi_{\text{ref}}(y_l|x)} \right) \right]}
+\]
+
+\textbf{Key identifiers}:
+\begin{itemize}
+    \item \textbf{Hinge loss} (max with zero)
+    \item Fixed margin $\delta$ (hyperparameter)
+    \item Loss is zero once margin is achieved---no further optimization
+\end{itemize}
+
+\subsubsection{ORPO (Odds Ratio Preference Optimization)}
+\[
+    \boxed{\mathcal{L}_{\text{ORPO}}(\theta) = \mathcal{L}_{\text{SFT}}(y_w) - \lambda \log \sigma\left( \log \frac{\text{odds}_\theta(y_w|x)}{\text{odds}_\theta(y_l|x)} \right)}
+\]
+where $\text{odds}_\theta(y|x) = \frac{\pi_\theta(y|x)}{1 - \pi_\theta(y|x)}$.
+
+\textbf{Key identifiers}:
+\begin{itemize}
+    \item \textbf{Combines SFT loss} with preference loss
+    \item Uses \textbf{odds ratio} instead of probability ratio
+    \item \textbf{No reference policy} $\pi_{\text{ref}}$ needed
+\end{itemize}
+
+\subsubsection{SimPO (Simple Preference Optimization)}
+\[
+    \boxed{\mathcal{L}_{\text{SimPO}}(\theta) = -\mathbb{E}_{(x, y_w, y_l)} \left[ \log \sigma\left( \frac{\beta}{|y_w|} \log \pi_\theta(y_w|x) - \frac{\beta}{|y_l|} \log \pi_\theta(y_l|x) - \gamma \right) \right]}
+\]
+
+\textbf{Key identifiers}:
+\begin{itemize}
+    \item \textbf{No reference policy} $\pi_{\text{ref}}$
+    \item \textbf{Length normalization} by $|y|$ (average log-prob per token)
+    \item Target margin $\gamma$ between winner and loser
+\end{itemize}
+
+\subsection{Taxonomy: What Makes Each Method Different?}
+
+\begin{center}
+    \renewcommand{\arraystretch}{1.4}
+    \begin{tabular}{l|ccccc}
+        \textbf{Method} & \textbf{Needs $\pi_{\text{ref}}$} & \textbf{Needs Critic} & \textbf{Data Type} & \textbf{Online?} & \textbf{Loss Type} \\
+        \hline
+        PPO             & No$^*$                            & Yes                   & RL rollouts        & Yes              & Clipped surrogate  \\
+        DPO             & Yes                               & No                    & Paired prefs       & No               & Log-sigmoid        \\
+        IPO             & Yes                               & No                    & Paired prefs       & No               & MSE                \\
+        GRPO            & Yes                               & No                    & RL rollouts        & Yes              & Clipped surrogate  \\
+        RLOO            & No                                & No                    & RL rollouts        & Yes              & REINFORCE          \\
+        KTO             & Yes                               & No                    & Unpaired           & No               & Prospect theory    \\
+        SLiC-HF         & Yes                               & No                    & Paired prefs       & No               & Hinge              \\
+        ORPO            & No                                & No                    & Paired prefs       & No               & SFT + odds         \\
+        SimPO           & No                                & No                    & Paired prefs       & No               & Log-sigmoid        \\
+    \end{tabular}
+\end{center}
+
+\noindent $^*$PPO in RLHF typically uses KL penalty to $\pi_{\text{ref}}$, but the core PPO algorithm doesn't require it.
+
+\subsection{Visual Decision Tree}
+
+\begin{center}
+    \begin{tikzpicture}[
+            node distance=1.5cm,
+            decision/.style={diamond, draw, fill=blue!10, text width=3cm, align=center, inner sep=2pt},
+            result/.style={rectangle, draw, fill=green!10, rounded corners, text width=2cm, align=center},
+            arrow/.style={->, >=stealth, thick}
+        ]
+        % Root
+        \node[decision] (q1) {Have paired preferences?};
+
+        % Yes branch
+        \node[decision, below left=1.5cm and 2cm of q1] (q2) {Want reference-free?};
+        \node[result, below left=1cm and 0.5cm of q2] (orpo) {ORPO\\SimPO};
+        \node[decision, below right=1cm and 0.5cm of q2] (q3) {Want margin control?};
+        \node[result, below left=0.8cm and 0cm of q3] (ipo) {IPO\\SLiC};
+        \node[result, below right=0.8cm and 0cm of q3] (dpo) {DPO};
+
+        % No branch (RL-based)
+        \node[decision, below right=1.5cm and 2cm of q1] (q4) {Have reward model?};
+        \node[result, below left=1cm and 0.2cm of q4] (kto) {KTO};
+        \node[decision, below right=1cm and 0.2cm of q4] (q5) {Want critic-free?};
+        \node[result, below left=0.8cm and -0.2cm of q5] (grpo) {GRPO\\RLOO};
+        \node[result, below right=0.8cm and -0.2cm of q5] (ppo) {PPO};
+
+        % Arrows
+        \draw[arrow] (q1) -- node[above left] {Yes} (q2);
+        \draw[arrow] (q1) -- node[above right] {No/RL} (q4);
+        \draw[arrow] (q2) -- node[left] {Yes} (orpo);
+        \draw[arrow] (q2) -- node[right] {No} (q3);
+        \draw[arrow] (q3) -- node[left] {Yes} (ipo);
+        \draw[arrow] (q3) -- node[right] {No} (dpo);
+        \draw[arrow] (q4) -- node[left] {No} (kto);
+        \draw[arrow] (q4) -- node[right] {Yes} (q5);
+        \draw[arrow] (q5) -- node[left] {Yes} (grpo);
+        \draw[arrow] (q5) -- node[right] {No} (ppo);
+    \end{tikzpicture}
+\end{center}
+
+\subsection{Gradient Comparison}
+
+Understanding the gradients helps identify \emph{how} each method learns:
+
+\begin{center}
+    \renewcommand{\arraystretch}{1.8}
+    \begin{tabular}{l|l}
+        \textbf{Method} & \textbf{Gradient Structure}                                                                                                                                                              \\
+        \hline
+        DPO             & $\nabla_\theta \mathcal{L} \propto \underbrace{\sigma(\hat{r}_l - \hat{r}_w)}_{\text{error weight}} \bigl(\nabla \log \pi_\theta(y_w) - \nabla \log \pi_\theta(y_l)\bigr)$               \\
+        IPO             & $\nabla_\theta \mathcal{L} \propto \underbrace{(\hat{r}_w - \hat{r}_l - \tfrac{1}{2\beta})}_{\text{linear error}} \bigl(\nabla \log \pi_\theta(y_w) - \nabla \log \pi_\theta(y_l)\bigr)$ \\
+        PPO/GRPO        & $\nabla_\theta \mathcal{L} \propto A_t \nabla \log \pi_\theta(a_t|s_t)$ \quad (clipped when $r_t$ out of range)                                                                          \\
+        SLiC-HF         & $\nabla_\theta \mathcal{L} = 0$ when margin satisfied; else like DPO                                                                                                                     \\
+    \end{tabular}
+\end{center}
+
+\textbf{Key insight}: DPO's weighting $\sigma(\hat{r}_l - \hat{r}_w)$ is large when the model is ``wrong'' (assigns higher implicit reward to the loser). IPO's linear weighting is gentler and prevents over-optimization.
+
+\subsection{When to Use What}
+
+\begin{itemize}
+    \item \textbf{DPO}: Default choice for offline preference optimization. Simple, effective, well-understood.
+
+    \item \textbf{IPO}: When you observe DPO overfitting or want more controlled optimization.
+
+    \item \textbf{SimPO/ORPO}: When you don't want to maintain a reference policy (simpler infrastructure).
+
+    \item \textbf{KTO}: When you only have thumbs-up/thumbs-down data, not pairwise comparisons.
+
+    \item \textbf{GRPO}: Online RL without the complexity of training a critic; DeepSeek's choice.
+
+    \item \textbf{RLOO}: Similar to GRPO but preserves reward scale; simpler baseline computation.
+
+    \item \textbf{PPO}: When you need fine-grained control, have compute for a critic, or are doing classic RL.
+
+    \item \textbf{SLiC-HF}: When you want to stop optimizing once a margin is achieved.
+\end{itemize}
