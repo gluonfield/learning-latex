@@ -569,20 +569,67 @@ The Central Limit Theorem is foundational to many ML techniques:
     \end{align*}
 \end{definition}
 
-\begin{example}[Healthcare Screening]
-    1000 patients take a screening test. True cases: 80. The model flags 90 patients as positive; among them 60 truly have the condition.
+\begin{example}[Cancer Screening: Bayes Meets Classification Metrics]
+    A cancer screening test has these properties:
+    \begin{itemize}
+        \item If you have cancer, the test is positive 99\% of the time: $P(\text{pos} \mid \text{cancer}) = 0.99$.
+        \item If you are healthy, the test is (wrongly) positive 5\% of the time: $P(\text{pos} \mid \text{healthy}) = 0.05$.
+        \item Only 1\% of the population has cancer: $P(\text{cancer}) = 0.01$.
+    \end{itemize}
+
+    \textbf{Question}: If you test positive, what is the probability you actually have cancer?
+
+    \textbf{Step 1: Apply Bayes' theorem.}
     \[
-        \text{TP} = 60, \quad \text{FP} = 30, \quad \text{FN} = 20, \quad \text{TN} = 890.
+        P(\text{cancer} \mid \text{pos}) = \frac{P(\text{pos} \mid \text{cancer}) \cdot P(\text{cancer})}{P(\text{pos})}.
     \]
+    First compute $P(\text{pos})$ using the law of total probability:
+    \begin{align*}
+        P(\text{pos}) & = P(\text{pos} \mid \text{cancer}) \cdot P(\text{cancer}) + P(\text{pos} \mid \text{healthy}) \cdot P(\text{healthy}) \\
+                      & = 0.99 \times 0.01 + 0.05 \times 0.99 = 0.0099 + 0.0495 = 0.0594.
+    \end{align*}
+    Now apply Bayes:
     \[
-        \text{Precision} = \frac{60}{60+30} \approx 0.67, \qquad
-        \text{Recall} = \frac{60}{60+20} = 0.75,
+        P(\text{cancer} \mid \text{pos}) = \frac{0.99 \times 0.01}{0.0594} = \frac{0.0099}{0.0594} \approx 0.167.
     \]
+
+    \textbf{Step 2: Visualize with 1000 people.}
+    \begin{center}
+        \begin{tikzpicture}[scale=0.9, font=\small]
+            \node[draw, minimum width=3cm, minimum height=1cm, fill=gray!10] at (0, 2) {1000 people};
+            \draw[->, thick] (-0.8, 1.4) -- (-2, 0.6);
+            \draw[->, thick] (0.8, 1.4) -- (2, 0.6);
+            \node[draw, minimum width=2.2cm, minimum height=0.8cm, fill=red!15] at (-2, 0.2) {10 have cancer};
+            \node[draw, minimum width=2.5cm, minimum height=0.8cm, fill=green!15] at (2, 0.2) {990 healthy};
+            \draw[->, thick] (-2, -0.2) -- (-2, -0.8);
+            \draw[->, thick] (2, -0.2) -- (2, -0.8);
+            \node[draw, minimum width=2.2cm, minimum height=0.8cm, fill=red!25] at (-2, -1.3) {$\approx$10 test +};
+            \node[draw, minimum width=2.5cm, minimum height=0.8cm, fill=orange!20] at (2, -1.3) {$\approx$50 test +};
+            \node[below, align=center] at (0, -2.2) {Total positive: $\approx$60\\True cancer among positives: $10/60 \approx 17\%$};
+        \end{tikzpicture}
+    \end{center}
+    The 50 false positives from the large healthy population overwhelm the 10 true positives. This is the \textbf{base rate fallacy}.
+
+    \textbf{Step 3: Build the confusion matrix.}
     \[
-        \text{Accuracy} = \frac{60+890}{1000} = 0.95, \qquad
-        F_1 \approx 0.71.
+        \text{TP} = 10, \quad \text{FP} = 50, \quad \text{FN} = 0, \quad \text{TN} = 940.
     \]
-    Despite high accuracy (many healthy patients), the $F_1$ score and recall show room to reduce missed cases (FN).
+
+    \textbf{Step 4: Compute classification metrics.}
+    \begin{align*}
+        \text{Precision} & = \frac{10}{10+50} = \frac{10}{60} \approx 0.17           &  & \text{(only 17\% of positive tests are true cases)} \\
+        \text{Recall}    & = \frac{10}{10+0} = 1.0                                   &  & \text{(test catches 100\% of cancer cases)}         \\
+        \text{Accuracy}  & = \frac{10+940}{1000} = 0.95                              &  & \text{(95\% overall correct)}                       \\
+        F_1              & = 2 \cdot \frac{0.17 \times 1.0}{0.17 + 1.0} \approx 0.29
+    \end{align*}
+
+    \textbf{Key insights}:
+    \begin{itemize}
+        \item \textbf{Precision $=$ Bayes' answer}: $\text{Precision} = P(\text{cancer} \mid \text{positive}) = 0.17$.
+        \item \textbf{Recall $=$ test detection rate}: $\text{Recall} = P(\text{positive} \mid \text{cancer}) = 0.99$.
+        \item \textbf{The accuracy paradox}: 95\% accuracy sounds good, but a classifier that \emph{always} predicts ``healthy'' achieves 99\% accuracy! Accuracy is misleading for imbalanced classes.
+        \item \textbf{$F_1$ tells the truth}: The low $F_1 = 0.29$ reveals that despite high recall, the poor precision makes this test problematic for diagnosis (too many false alarms).
+    \end{itemize}
 \end{example}
 
 \begin{remark}[Beyond Binary]

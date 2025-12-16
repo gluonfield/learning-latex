@@ -1076,6 +1076,8 @@ Fine-tuning language models with RL proceeds in three stages:
 \begin{remark}[KL Divergence Direction: Why $D_{\mathrm{KL}}(\pi_\theta \| \pi_{\text{ref}})$?]
     The KL divergence is \emph{asymmetric}: $D_{\mathrm{KL}}(P \| Q) \neq D_{\mathrm{KL}}(Q \| P)$. The two directions have different names and behaviors:
 
+    \textbf{Note on naming:} some communities swap the labels ``forward'' and ``reverse'' depending on which distribution they call the ``target.'' The unambiguous way to read the direction is: \emph{which distribution the expectation is taken under}.
+
     \begin{definition}[KL Divergence Directions]
         For distributions $P$ and $Q$:
         \begin{align*}
@@ -1448,6 +1450,190 @@ KTO is designed for non-paired preference data (just labels of good/bad, not com
     KTO is inspired by Kahneman and Tversky's prospect theory: humans are loss-averse and evaluate outcomes relative to a reference point, not absolutely.
 \end{remark}
 
+\section{Reinforcement Learning with Verifiable Rewards (RLVR)}
+\label{sec:rlvr}
+
+A paradigm shift in LLM training emerged with \emph{Reinforcement Learning with Verifiable Rewards} (RLVR)---using programmatically checkable correctness signals instead of learned reward models or human preferences. This approach, notably used by DeepSeek-R1, enables scalable RL training for reasoning tasks.
+
+\subsection{Motivation: Beyond Human Preferences}
+
+Traditional RLHF has fundamental limitations:
+\begin{itemize}
+    \item \textbf{Reward model bottleneck}: The learned reward model $r_\phi(x, y)$ is an imperfect proxy for human preferences, and optimizing against it leads to reward hacking.
+    \item \textbf{Annotation cost}: Collecting high-quality human preferences is expensive and slow, limiting scale.
+    \item \textbf{Subjectivity}: For tasks with objectively correct answers (math, code, logic), human preferences add noise rather than signal.
+\end{itemize}
+
+RLVR sidesteps these issues by using \emph{verifiable rewards}---signals that can be computed automatically and are provably correct.
+
+\begin{definition}[Verifiable Reward]
+    A reward function $r(x, y)$ is \emph{verifiable} if it can be computed programmatically without human judgment, typically by checking the output against a ground-truth answer or executing it in an environment.
+\end{definition}
+
+\subsection{Sources of Verifiable Rewards}
+
+\begin{center}
+    \renewcommand{\arraystretch}{1.4}
+    \begin{tabular}{l|l|l}
+        \textbf{Domain} & \textbf{Verification Method}             & \textbf{Reward Signal}                                            \\
+        \hline
+        Mathematics     & Final answer matching                    & $r = \mathbf{1}[\text{extracted\_answer} = \text{ground\_truth}]$ \\
+        Code            & Test case execution                      & $r = \frac{\text{\# passed tests}}{\text{\# total tests}}$        \\
+        Logic puzzles   & Constraint satisfaction                  & $r = \mathbf{1}[\text{all constraints satisfied}]$                \\
+        Formal proofs   & Proof assistant verification (Lean, Coq) & $r = \mathbf{1}[\text{proof checks}]$                             \\
+        Games           & Win/loss outcome                         & $r \in \{-1, 0, +1\}$                                             \\
+    \end{tabular}
+\end{center}
+
+\begin{remark}[Format Rewards]
+    In addition to correctness rewards, RLVR often includes \emph{format rewards} to encourage structured reasoning:
+    \[
+        r_{\text{format}}(y) = \begin{cases}
+            +\alpha & \text{if } y \text{ contains proper } \texttt{<think>}\ldots\texttt{</think>} \text{ tags} \\
+            -\alpha & \text{otherwise}
+        \end{cases}
+    \]
+    This encourages the model to ``show its work'' in a parseable format without requiring human annotation.
+\end{remark}
+
+\subsection{The RLVR Training Pipeline}
+
+The typical RLVR pipeline has three stages:
+
+\begin{enumerate}
+    \item \textbf{Cold Start (Optional SFT)}: Initialize with a base model or perform light supervised fine-tuning on reasoning examples. Some approaches (like DeepSeek-R1-Zero) skip this entirely.
+
+    \item \textbf{RL with Verifiable Rewards}: Apply policy gradient methods (typically GRPO) with verifiable rewards:
+          \begin{itemize}
+              \item Sample multiple completions $\{y_i\}_{i=1}^G$ for each prompt $x$
+              \item Compute verifiable rewards $r(x, y_i)$ for each completion
+              \item Update policy using group-relative advantages
+          \end{itemize}
+
+    \item \textbf{Rejection Sampling + SFT (Optional)}: Distill the RL-trained model by:
+          \begin{itemize}
+              \item Sampling many completions and keeping only correct ones
+              \item Fine-tuning a new model on this curated dataset
+          \end{itemize}
+\end{enumerate}
+
+\subsection{Mathematical Formulation}
+
+RLVR typically uses GRPO (\cref{sec:grpo}) as the optimization algorithm. The key difference from RLHF is the reward source.
+
+\begin{definition}[RLVR Objective]
+    Given a dataset of problems $\mathcal{D} = \{(x_i, a_i^*)\}$ where $a_i^*$ is the ground-truth answer, the RLVR objective is:
+    \[
+        \max_\theta \; \mathbb{E}_{x \sim \mathcal{D}} \left[ \mathbb{E}_{y \sim \pi_\theta(\cdot|x)} \bigl[ r_{\text{verify}}(y, a^*) \bigr] \right] - \beta \, D_{\mathrm{KL}}(\pi_\theta \| \pi_{\text{ref}})
+    \]
+    where the verifiable reward is:
+    \[
+        r_{\text{verify}}(y, a^*) = \mathbf{1}\bigl[\texttt{extract\_answer}(y) = a^*\bigr].
+    \]
+\end{definition}
+
+In practice, GRPO is applied with:
+\[
+    \mathcal{L}_{\text{RLVR}}(\theta) = -\mathbb{E}_{x} \left[ \frac{1}{G} \sum_{i=1}^{G} \min\left( \rho_i \tilde{A}_i, \, \text{clip}(\rho_i, 1-\epsilon, 1+\epsilon) \tilde{A}_i \right) \right]
+\]
+where the advantage is computed from verifiable rewards:
+\[
+    \tilde{A}_i = \frac{r_{\text{verify}}(y_i, a^*) - \bar{r}}{\sigma_r + \varepsilon}, \quad \bar{r} = \frac{1}{G}\sum_{j=1}^G r_{\text{verify}}(y_j, a^*).
+\]
+
+\begin{remark}[Why GRPO for RLVR?]
+    GRPO is particularly well-suited for RLVR because:
+    \begin{enumerate}
+        \item \textbf{No critic needed}: Verifiable rewards provide direct signal; no need to train a value network.
+        \item \textbf{Group normalization handles sparse rewards}: When most completions are wrong ($r=0$) and few are correct ($r=1$), normalization ensures meaningful gradients.
+        \item \textbf{Scales to long generations}: Reasoning traces can be thousands of tokens; critic-based methods struggle with credit assignment over such horizons.
+    \end{enumerate}
+\end{remark}
+
+\subsection{DeepSeek-R1: A Case Study}
+
+DeepSeek-R1 demonstrated that pure RL with verifiable rewards can induce sophisticated reasoning behaviors without supervised fine-tuning on chain-of-thought data.
+
+\begin{example}[DeepSeek-R1-Zero]
+    Starting from DeepSeek-V3-Base (no instruction tuning), applying GRPO with only:
+    \begin{itemize}
+        \item Accuracy rewards: $r = 1$ if final answer correct, $0$ otherwise
+        \item Format rewards: Small bonus for using \texttt{<think>} tags
+    \end{itemize}
+    The model spontaneously developed:
+    \begin{itemize}
+        \item Extended chain-of-thought reasoning
+        \item Self-verification (``let me check this...'')
+        \item Backtracking when detecting errors
+        \item Reflection on approach (``maybe I should try a different method'')
+    \end{itemize}
+    These behaviors emerged purely from RL optimization---not from imitating human demonstrations.
+\end{example}
+
+\begin{remark}[The ``Aha Moment'']
+    A striking observation from DeepSeek-R1-Zero training: the model learned to allocate more ``thinking tokens'' to harder problems. This emergent test-time compute scaling was not explicitly programmed but arose from the RL objective---longer reasoning chains were rewarded when they led to correct answers.
+\end{remark}
+
+\subsection{RLVR vs RLHF: Key Differences}
+
+\begin{center}
+    \renewcommand{\arraystretch}{1.4}
+    \begin{tabular}{l|l|l}
+        \textbf{Aspect}    & \textbf{RLHF}                  & \textbf{RLVR}                  \\
+        \hline
+        Reward source      & Learned model $r_\phi(x,y)$    & Programmatic verification      \\
+        Ground truth       & Human preferences (subjective) & Correct answer (objective)     \\
+        Reward hacking     & Major concern                  & Minimal (rewards are exact)    \\
+        Scalability        & Limited by annotation          & Limited by verifiable problems \\
+        Applicable domains & Open-ended generation          & Math, code, logic, games       \\
+        Training signal    & Dense (per-response)           & Sparse (binary correctness)    \\
+        Emergent behaviors & Style matching                 & Reasoning strategies           \\
+    \end{tabular}
+\end{center}
+
+\subsection{Challenges and Limitations}
+
+\begin{enumerate}
+    \item \textbf{Domain restriction}: RLVR only works for tasks with verifiable answers. Open-ended tasks (creative writing, general chat) still require RLHF or similar.
+
+    \item \textbf{Answer extraction}: Reliably extracting the final answer from free-form reasoning is non-trivial. Regex-based extraction can fail on edge cases.
+
+    \item \textbf{Reward sparsity}: Binary correctness rewards provide limited signal. A response that's ``almost right'' gets the same $r=0$ as a completely wrong one.
+
+    \item \textbf{Reasoning shortcuts}: Models may learn to pattern-match to answers without genuine reasoning, especially on problems similar to training data.
+
+    \item \textbf{Distribution mismatch}: Training on math/code problems may not transfer well to general reasoning capabilities.
+\end{enumerate}
+
+\begin{remark}[Combining RLVR and RLHF]
+    Modern training pipelines often combine both:
+    \begin{enumerate}
+        \item RLVR on math/code to develop core reasoning capabilities
+        \item RLHF on general tasks to align style and safety
+    \end{enumerate}
+    This hybrid approach leverages the scalability of verifiable rewards where possible while maintaining broad capabilities.
+\end{remark}
+
+\subsection{Process Reward Models: A Middle Ground}
+
+An intermediate approach uses \emph{Process Reward Models} (PRMs) that provide step-level feedback rather than outcome-only rewards.
+
+\begin{definition}[Process Reward Model]
+    A PRM $r_{\text{PRM}}(x, y_{\leq t})$ scores the reasoning process at each step, not just the final answer:
+    \[
+        r_{\text{PRM}}(x, y_{\leq t}) = P(\text{step } t \text{ is correct} \mid x, y_{\leq t}).
+    \]
+\end{definition}
+
+PRMs offer:
+\begin{itemize}
+    \item \textbf{Denser signal}: Feedback at each reasoning step, not just the end
+    \item \textbf{Better credit assignment}: Identify where reasoning went wrong
+    \item \textbf{Verifiable training data}: PRM training data can be generated by checking intermediate steps
+\end{itemize}
+
+However, PRMs still require significant annotation effort to label step-level correctness, though this can sometimes be automated for mathematical derivations.
+
 \section{Comparison of Alignment Methods}
 
 This section provides a comprehensive comparison of all preference optimization and RL alignment methods. The goal is to make each method identifiable by its loss function structure.
@@ -1507,9 +1693,25 @@ For precise implementation, here are the complete loss functions:
 
 \subsubsection{PPO (Proximal Policy Optimization)}
 \[
-    \boxed{\mathcal{L}^{\text{PPO}}(\theta) = -\mathbb{E}_t \left[ \min\left( r_t(\theta) A_t, \; \text{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon) A_t \right) \right]}
+    \mathcal{L}^{\text{PPO}}(\theta) = -\mathbb{E}_t \left[ \min\left( r_t(\theta) A_t, \; \text{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon) A_t \right) \right]
 \]
 where $r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{\text{old}}}(a_t|s_t)}$ and $A_t$ is the advantage estimate (typically from GAE).
+
+\begin{remark}[Sequence vs Token-Level Ratios (How It's Implemented for LLMs)]
+    In classical RL, $r_t(\theta)$ is defined at a \emph{single time step} (one action given one state).
+    For an LLM, the ``action'' is the \emph{next token}, so this definition still applies with $a_t = y_t$ and $s_t = (x, y_{<t})$.
+
+    Sometimes you will also see a \emph{sequence-level} ratio for a full sampled response $y = (y_1,\ldots,y_T)$:
+    \[
+        \frac{\pi_\theta(y|x)}{\pi_{\theta_{\text{old}}}(y|x)}
+        = \prod_{t=1}^{T} \frac{\pi_\theta(y_t \mid x, y_{<t})}{\pi_{\theta_{\text{old}}}(y_t \mid x, y_{<t})}.
+    \]
+    In practice, implementations compute \emph{token-level log-probabilities} and sum them:
+    \[
+        \log \pi_\theta(y|x) = \sum_{t=1}^{T} \log \pi_\theta(y_t \mid x, y_{<t}),
+    \]
+    and they often apply clipping and KL penalties \emph{per token} (with masking) for stability and easier bookkeeping.
+\end{remark}
 
 \textbf{Key identifiers}:
 \begin{itemize}
@@ -1520,7 +1722,7 @@ where $r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{\text{old}}}(a_t|s_
 
 \subsubsection{DPO (Direct Preference Optimization)}
 \[
-    \boxed{\mathcal{L}_{\text{DPO}}(\theta) = -\mathbb{E}_{(x, y_w, y_l)} \left[ \log \sigma\left( \beta \log \frac{\pi_\theta(y_w|x)}{\pi_{\text{ref}}(y_w|x)} - \beta \log \frac{\pi_\theta(y_l|x)}{\pi_{\text{ref}}(y_l|x)} \right) \right]}
+    \mathcal{L}_{\text{DPO}}(\theta) = -\mathbb{E}_{(x, y_w, y_l)} \left[ \log \sigma\left( \beta \log \frac{\pi_\theta(y_w|x)}{\pi_{\text{ref}}(y_w|x)} - \beta \log \frac{\pi_\theta(y_l|x)}{\pi_{\text{ref}}(y_l|x)} \right) \right]
 \]
 
 \textbf{Equivalent forms}:
@@ -1538,7 +1740,7 @@ where $r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{\text{old}}}(a_t|s_
 
 \subsubsection{IPO (Identity Preference Optimization)}
 \[
-    \boxed{\mathcal{L}_{\text{IPO}}(\theta) = \mathbb{E}_{(x, y_w, y_l)} \left[ \left( \log \frac{\pi_\theta(y_w|x)}{\pi_{\text{ref}}(y_w|x)} - \log \frac{\pi_\theta(y_l|x)}{\pi_{\text{ref}}(y_l|x)} - \frac{1}{2\beta} \right)^2 \right]}
+    \mathcal{L}_{\text{IPO}}(\theta) = \mathbb{E}_{(x, y_w, y_l)} \left[ \left( \log \frac{\pi_\theta(y_w|x)}{\pi_{\text{ref}}(y_w|x)} - \log \frac{\pi_\theta(y_l|x)}{\pi_{\text{ref}}(y_l|x)} - \frac{1}{2\beta} \right)^2 \right]
 \]
 
 \textbf{Key identifiers}:
@@ -1550,7 +1752,7 @@ where $r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{\text{old}}}(a_t|s_
 
 \subsubsection{GRPO (Group Relative Policy Optimization)}
 \[
-    \boxed{\mathcal{L}_{\text{GRPO}}(\theta) = -\mathbb{E}_{x} \left[ \frac{1}{G} \sum_{i=1}^{G} \min\left( \rho_i A_i, \, \text{clip}(\rho_i, 1-\epsilon, 1+\epsilon) A_i \right) \right] + \beta \, D_{\mathrm{KL}}(\pi_\theta \| \pi_{\text{ref}})}
+    \mathcal{L}_{\text{GRPO}}(\theta) = -\mathbb{E}_{x} \left[ \frac{1}{G} \sum_{i=1}^{G} \min\left( \rho_i A_i, \, \text{clip}(\rho_i, 1-\epsilon, 1+\epsilon) A_i \right) \right] + \beta \, D_{\mathrm{KL}}(\pi_\theta \| \pi_{\text{ref}})
 \]
 where $\rho_i = \frac{\pi_\theta(y_i|x)}{\pi_{\theta_{\text{old}}}(y_i|x)}$ and the advantage is group-normalized:
 \[
@@ -1567,7 +1769,7 @@ where $\rho_i = \frac{\pi_\theta(y_i|x)}{\pi_{\theta_{\text{old}}}(y_i|x)}$ and 
 
 \subsubsection{RLOO (REINFORCE Leave-One-Out)}
 \[
-    \boxed{\mathcal{L}_{\text{RLOO}}(\theta) = -\mathbb{E}_x \left[ \frac{1}{G} \sum_{i=1}^{G} \log \pi_\theta(y_i|x) \cdot \left( r(x, y_i) - \frac{1}{G-1}\sum_{j \neq i} r(x, y_j) \right) \right]}
+    \mathcal{L}_{\text{RLOO}}(\theta) = -\mathbb{E}_x \left[ \frac{1}{G} \sum_{i=1}^{G} \log \pi_\theta(y_i|x) \cdot \left( r(x, y_i) - \frac{1}{G-1}\sum_{j \neq i} r(x, y_j) \right) \right]
 \]
 
 \textbf{Key identifiers}:
@@ -1579,7 +1781,7 @@ where $\rho_i = \frac{\pi_\theta(y_i|x)}{\pi_{\theta_{\text{old}}}(y_i|x)}$ and 
 
 \subsubsection{KTO (Kahneman-Tversky Optimization)}
 \[
-    \boxed{\mathcal{L}_{\text{KTO}}(\theta) = \mathbb{E}_{x,y} \left[ \lambda_y \cdot \max\left(0, 1 - \sigma\bigl(\beta \cdot \text{sign}(y)(\hat{r}_y - z_0)\bigr)\right) \right]}
+    \mathcal{L}_{\text{KTO}}(\theta) = \mathbb{E}_{x,y} \left[ \lambda_y \cdot \max\left(0, 1 - \sigma\bigl(\beta \cdot \text{sign}(y)(\hat{r}_y - z_0)\bigr)\right) \right]
 \]
 where:
 \begin{itemize}
@@ -1597,7 +1799,7 @@ where:
 
 \subsubsection{SLiC-HF (Sequence Likelihood Calibration)}
 \[
-    \boxed{\mathcal{L}_{\text{SLiC}}(\theta) = \mathbb{E}_{(x, y_w, y_l)} \left[ \max\left(0, \delta - \log \frac{\pi_\theta(y_w|x)}{\pi_{\text{ref}}(y_w|x)} + \log \frac{\pi_\theta(y_l|x)}{\pi_{\text{ref}}(y_l|x)} \right) \right]}
+    \mathcal{L}_{\text{SLiC}}(\theta) = \mathbb{E}_{(x, y_w, y_l)} \left[ \max\left(0, \delta - \log \frac{\pi_\theta(y_w|x)}{\pi_{\text{ref}}(y_w|x)} + \log \frac{\pi_\theta(y_l|x)}{\pi_{\text{ref}}(y_l|x)} \right) \right]
 \]
 
 \textbf{Key identifiers}:
@@ -1609,7 +1811,7 @@ where:
 
 \subsubsection{ORPO (Odds Ratio Preference Optimization)}
 \[
-    \boxed{\mathcal{L}_{\text{ORPO}}(\theta) = \mathcal{L}_{\text{SFT}}(y_w) - \lambda \log \sigma\left( \log \frac{\text{odds}_\theta(y_w|x)}{\text{odds}_\theta(y_l|x)} \right)}
+    \mathcal{L}_{\text{ORPO}}(\theta) = \mathcal{L}_{\text{SFT}}(y_w) - \lambda \log \sigma\left( \log \frac{\text{odds}_\theta(y_w|x)}{\text{odds}_\theta(y_l|x)} \right)
 \]
 where $\text{odds}_\theta(y|x) = \frac{\pi_\theta(y|x)}{1 - \pi_\theta(y|x)}$.
 
@@ -1622,7 +1824,7 @@ where $\text{odds}_\theta(y|x) = \frac{\pi_\theta(y|x)}{1 - \pi_\theta(y|x)}$.
 
 \subsubsection{SimPO (Simple Preference Optimization)}
 \[
-    \boxed{\mathcal{L}_{\text{SimPO}}(\theta) = -\mathbb{E}_{(x, y_w, y_l)} \left[ \log \sigma\left( \frac{\beta}{|y_w|} \log \pi_\theta(y_w|x) - \frac{\beta}{|y_l|} \log \pi_\theta(y_l|x) - \gamma \right) \right]}
+    \mathcal{L}_{\text{SimPO}}(\theta) = -\mathbb{E}_{(x, y_w, y_l)} \left[ \log \sigma\left( \frac{\beta}{|y_w|} \log \pi_\theta(y_w|x) - \frac{\beta}{|y_l|} \log \pi_\theta(y_l|x) - \gamma \right) \right]
 \]
 
 \textbf{Key identifiers}:
