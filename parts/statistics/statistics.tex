@@ -874,7 +874,7 @@ The Central Limit Theorem is foundational to many ML techniques:
 
 \subsection{KL Divergence: Measuring Distribution Difference}
 
-\begin{definition}[Kullback-Leibler Divergence]
+\begin{definition}[Kullback-Leibler Divergence]\label{def:kl-divergence}
     The KL divergence from distribution $q$ to distribution $p$ is:
     \[
         D_{\mathrm{KL}}(p \| q) = \sum_{x} p(x) \log \frac{p(x)}{q(x)} = \mathbb{E}_{x \sim p}\left[ \log \frac{p(x)}{q(x)} \right].
