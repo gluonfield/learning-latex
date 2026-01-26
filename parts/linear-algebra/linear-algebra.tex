@@ -1155,3 +1155,598 @@ In genomics, the data matrix $\mathbf{X}$ consists of Single Nucleotide Polymorp
 PCA is applied to this matrix to visualize population structure. The first two principal components often reveal geographic ancestry. For example, when applied to European populations, the projection of individuals onto the plane spanned by the first two principal components remarkably reconstructs the map of Europe, with individuals clustering by their country of origin. This indicates that geography is the dominant factor explaining genetic variation.
 
 
+\section{UMAP: Nonlinear Dimensionality Reduction}
+
+\subsection{Limitations of Linear Methods}
+
+PCA is a powerful technique, but it has a fundamental limitation: it can only discover \emph{linear} structure in data. When data lies on or near a nonlinear manifold embedded in high-dimensional space, linear projections may fail to capture the intrinsic geometry.
+
+\begin{example}[Swiss roll]
+  Consider the ``Swiss roll'' dataset: points sampled from a 2D rectangular sheet that has been rolled up into a spiral in $\mathbb{R}^3$. The intrinsic dimensionality is 2 (points can be parameterized by their position on the original sheet), but PCA projecting to 2D will ``crush'' the roll, mixing together points that are far apart along the manifold.
+\end{example}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[scale=0.85]
+  % === LEFT: Swiss roll in 3D ===
+  \begin{scope}[shift={(-5.5,0)}]
+    % Draw spiral curves at different heights to show 3D structure
+    \draw[thick, purple!70, opacity=0.6]
+      plot[domain=1.5:4.2, samples=40, smooth]
+      ({0.35*\x*cos(\x r)}, {-0.6 + 0.35*\x*sin(\x r)*0.5});
+    \draw[thick, purple!50, opacity=0.6]
+      plot[domain=1.5:4.2, samples=40, smooth]
+      ({0.35*\x*cos(\x r)}, {-0.3 + 0.35*\x*sin(\x r)*0.5});
+    \draw[thick, purple!40, opacity=0.6]
+      plot[domain=1.5:4.2, samples=40, smooth]
+      ({0.35*\x*cos(\x r)}, {0 + 0.35*\x*sin(\x r)*0.5});
+    \draw[thick, purple!50, opacity=0.6]
+      plot[domain=1.5:4.2, samples=40, smooth]
+      ({0.35*\x*cos(\x r)}, {0.3 + 0.35*\x*sin(\x r)*0.5});
+    \draw[thick, purple!70, opacity=0.6]
+      plot[domain=1.5:4.2, samples=40, smooth]
+      ({0.35*\x*cos(\x r)}, {0.6 + 0.35*\x*sin(\x r)*0.5});
+    % Add points on the manifold with color gradient along the spiral
+    \foreach \t in {1.5,1.8,...,4.2} {
+      \foreach \h in {-0.8,-0.4,0,0.4,0.8} {
+        \pgfmathsetmacro{\col}{(\t-1.5)/(4.2-1.5)*100}
+        \fill[red!\col!blue, opacity=0.9]
+          ({0.35*\t*cos(\t r)}, {\h*0.6 + 0.35*\t*sin(\t r)*0.5}) circle (1.5pt);
+      }
+    }
+    % Axes
+    \draw[->, thick, gray] (-1.8,-1.8) -- (1.8,-1.8) node[right] {$x_1$};
+    \draw[->, thick, gray] (-1.8,-1.8) -- (-1.8,1.8) node[left] {$x_3$};
+    \draw[->, thick, gray] (-1.8,-1.8) -- (-0.8,-1.2) node[below right] {$x_2$};
+    % Title
+    \node[font=\bfseries] at (0,-2.5) {(a) Swiss roll in $\mathbb{R}^3$};
+  \end{scope}
+
+  % === MIDDLE: PCA projection ===
+  \begin{scope}[shift={(0,0)}]
+    % PCA crushes the spiral - colors get mixed
+    \foreach \t in {1.5,1.8,...,4.2} {
+      \pgfmathsetmacro{\col}{(\t-1.5)/(4.2-1.5)*100}
+      \pgfmathsetmacro{\px}{0.35*\t*cos(\t r)}
+      % Points collapse vertically, spread horizontally
+      \foreach \jitter in {-0.3,-0.15,0,0.15,0.3} {
+        \fill[red!\col!blue, opacity=0.9]
+          ({\px + \jitter*0.3}, {\jitter*1.2}) circle (1.5pt);
+      }
+    }
+    % Axes
+    \draw[->, thick, gray] (-2,-1.8) -- (2,-1.8) node[right] {$y_1$};
+    \draw[->, thick, gray] (0,-1.8) -- (0,1.8) node[above] {$y_2$};
+    % Title
+    \node[font=\bfseries] at (0,-2.5) {(b) PCA projection};
+    \node[font=\small, red!70!black] at (0,-3.1) {Colors interleaved};
+  \end{scope}
+
+  % === RIGHT: UMAP embedding ===
+  \begin{scope}[shift={(5.5,0)}]
+    % UMAP unrolls the manifold - color gradient preserved
+    \foreach \i in {0,1,...,10} {
+      \pgfmathsetmacro{\col}{\i/10*100}
+      \foreach \j in {-2,-1,0,1,2} {
+        \fill[red!\col!blue, opacity=0.9]
+          ({-1.6 + \i*0.32}, {\j*0.28}) circle (1.5pt);
+      }
+    }
+    % Axes
+    \draw[->, thick, gray] (-2,-1.8) -- (2,-1.8) node[right] {$y_1$};
+    \draw[->, thick, gray] (0,-1.8) -- (0,1.8) node[above] {$y_2$};
+    % Title
+    \node[font=\bfseries] at (0,-2.5) {(c) UMAP embedding};
+    \node[font=\small, green!50!black] at (0,-3.1) {Structure preserved};
+  \end{scope}
+
+  % Arrows between panels
+  \draw[->, very thick, gray] (-3.2,0) -- (-2.3,0) node[midway, above] {\small PCA};
+  \draw[->, very thick, gray] (2.3,0) -- (3.2,0) node[midway, above] {\small UMAP};
+\end{tikzpicture}
+\caption{The Swiss roll problem illustrates the limitation of linear dimensionality reduction. (a) Data lies on a 2D manifold rolled into 3D; color encodes position along the manifold (blue $\to$ red). (b) PCA projects onto the plane of maximum variance, mixing together points that are far apart on the manifold (note interleaved colors). (c) UMAP recovers the intrinsic 2D structure by preserving local neighborhoods, unrolling the manifold so that color varies smoothly from left to right.}
+\label{fig:swiss-roll}
+\end{figure}
+
+This motivates \emph{manifold learning} methods that can recover nonlinear structure. \textbf{UMAP} (Uniform Manifold Approximation and Projection) is a state-of-the-art technique grounded in Riemannian geometry and algebraic topology.
+
+\subsection{Mathematical Foundations}
+
+UMAP is built on the assumption that the data is uniformly distributed on a Riemannian manifold. The key insight is that we can infer the local metric structure from the data itself.
+
+\subsubsection{Local Distance and the Riemannian Assumption}
+
+Suppose data points $\mathbf{x}_1, \dots, \mathbf{x}_N$ lie on or near an unknown Riemannian manifold $\mathcal{M}$ embedded in $\mathbb{R}^d$. If the data is uniformly distributed on $\mathcal{M}$, then locally around each point $\mathbf{x}_i$, the density of nearby points reveals information about the local geometry.
+
+For each point $\mathbf{x}_i$, UMAP constructs a \emph{local metric} by finding its $k$ nearest neighbors and defining a distance scale $\sigma_i > 0$ such that:
+\begin{equation}\label{eq:umap-sigma}
+  \sum_{j=1}^{k} \exp\left(-\frac{d(\mathbf{x}_i, \mathbf{x}_{i_j}) - \rho_i}{\sigma_i}\right) = \log_2(k),
+\end{equation}
+where $\mathbf{x}_{i_1}, \dots, \mathbf{x}_{i_k}$ are the $k$ nearest neighbors of $\mathbf{x}_i$, and $\rho_i = \min_j d(\mathbf{x}_i, \mathbf{x}_{i_j})$ is the distance to the nearest neighbor. This normalization ensures each point ``sees'' a comparable local neighborhood regardless of the local density.
+
+\begin{remark}[On the uniformity assumption]\label{rem:umap-uniformity}
+  The assumption that data is \emph{uniformly} distributed on $\mathcal{M}$ is crucial for interpreting local density as geometric information. When data is non-uniform:
+  \begin{itemize}
+    \item \textbf{Dense regions} will have small $\sigma_i$ values, making the algorithm treat nearby points as ``close'' on the manifold.
+    \item \textbf{Sparse regions} will have large $\sigma_i$ values, stretching distances to maintain connectivity.
+  \end{itemize}
+  This adaptive scaling means UMAP \emph{implicitly assumes} non-uniform sampling reflects the underlying geometry (e.g., higher curvature regions sampled more densely). If the non-uniformity is purely a sampling artifact unrelated to geometry, UMAP may distort the true manifold structure. In practice, this is often acceptable because:
+  \begin{enumerate}
+    \item The local normalization via $\sigma_i$ partially compensates for density variations.
+    \item For visualization, preserving \emph{relative} neighborhood structure matters more than exact distances.
+  \end{enumerate}
+\end{remark}
+
+\begin{remark}[Embeddings on the sphere and fundamental non-uniformity]\label{rem:umap-sphere}
+  A common application of UMAP is visualizing \emph{embedding vectors} from neural networks (word embeddings, sentence embeddings, image features). These are often $L^2$-normalized to lie on the unit sphere $S^{d-1} \subset \mathbb{R}^d$. Here the non-uniformity is typically \textbf{fundamental}, not a sampling artifact:
+  \begin{itemize}
+    \item Some semantic regions (e.g., common words, frequent image classes) are inherently more populated.
+    \item The embedding space may have ``semantic voids''---regions with no meaningful concepts.
+    \item Cluster sizes reflect genuine differences in category diversity, not geometric curvature.
+  \end{itemize}
+
+  \textbf{Consequences of applying UMAP to fundamentally non-uniform data:}
+  \begin{enumerate}
+    \item \textbf{Density equalization}: UMAP stretches sparse regions and compresses dense regions, making the embedding appear more uniform than reality. A cluster of 1000 common words may appear similar in size to a cluster of 50 rare technical terms.
+
+    \item \textbf{Distance distortion}: Inter-cluster distances become unreliable. Two clusters that are far apart on $S^{d-1}$ but have different densities will have their relative distance distorted by the differing $\sigma_i$ values.
+
+    \item \textbf{Loss of density information}: The original density structure---which may carry semantic meaning (e.g., ``this concept has many variants'')---is erased by the normalization.
+
+    \item \textbf{Cluster fragmentation}: Very dense clusters may fragment into multiple sub-clusters in the UMAP embedding, as the small $\sigma_i$ values create fine-grained distinctions that wouldn't appear in sparser regions.
+  \end{enumerate}
+
+  \textbf{Practical implications:}
+  \begin{itemize}
+    \item UMAP visualizations are reliable for \emph{neighborhood structure} (which points are near which) but not for \emph{cluster sizes} or \emph{inter-cluster distances}.
+    \item If density information matters, consider alternatives: $t$-SNE with fixed perplexity, or simply examining the raw cosine similarities.
+    \item For quantitative analysis, work in the original high-dimensional space; use UMAP only for qualitative exploration.
+  \end{itemize}
+\end{remark}
+
+\begin{remark}[On the Riemannian assumption]\label{rem:umap-riemannian}
+  UMAP assumes the manifold $\mathcal{M}$ is \emph{Riemannian}, meaning it has a positive-definite metric tensor $g$ at each point. This ensures:
+  \begin{itemize}
+    \item Distances are always non-negative: $d(p,q) \geq 0$ with equality iff $p = q$.
+    \item The triangle inequality holds, making $k$-NN queries geometrically meaningful.
+    \item Local neighborhoods are topologically balls (no causal structure).
+  \end{itemize}
+
+  For a \textbf{pseudo-Riemannian} (e.g., Minkowski/Lorentzian) manifold with indefinite metric signature $(p,q)$, fundamental issues arise:
+  \begin{enumerate}
+    \item \textbf{Null distances}: Distinct points can have zero ``distance'' (null geodesics), breaking the nearest-neighbor concept.
+    \item \textbf{Negative squared intervals}: The ``distance'' $ds^2 = g_{\mu\nu}dx^\mu dx^\nu$ can be negative (spacelike vs.\ timelike separation), so $\sqrt{ds^2}$ is not always real.
+    \item \textbf{Causal structure}: Neighborhoods in Minkowski space are cones, not balls. Points within the light cone have timelike separation; points outside have spacelike separation.
+  \end{enumerate}
+
+  Adapting UMAP to pseudo-Riemannian settings would require replacing Euclidean distance with the appropriate interval, handling the causal structure explicitly, and redefining what ``neighborhood'' means. Recent work on \emph{hyperbolic embeddings} (using the Poincar\'e disk or hyperboloid model) extends manifold learning to spaces of constant negative curvature, but true Lorentzian manifold learning remains an open problem.
+\end{remark}
+
+\subsubsection{Fuzzy Simplicial Sets}
+
+UMAP represents the topological structure of the data using \emph{fuzzy simplicial sets}---a concept from algebraic topology generalized to allow membership values in $[0,1]$.
+
+\begin{definition}[Fuzzy graph from data]
+  Given data $\{\mathbf{x}_i\}_{i=1}^N$ with local scales $\{\sigma_i\}$, define a fuzzy graph $G = (V, E, w)$ where:
+  \begin{itemize}
+    \item $V = \{1, \dots, N\}$ (vertices correspond to data points),
+    \item $E = V \times V$ (all possible edges),
+    \item The edge weight (membership strength) from $i$ to $j$ is:
+          \begin{equation}\label{eq:umap-weight}
+            w_{i \to j} = \exp\left(-\frac{\max(0, d(\mathbf{x}_i, \mathbf{x}_j) - \rho_i)}{\sigma_i}\right).
+          \end{equation}
+  \end{itemize}
+\end{definition}
+
+\begin{remark}
+  The weights $w_{i \to j}$ are generally asymmetric: $w_{i \to j} \neq w_{j \to i}$. This reflects the fact that the local geometry around $\mathbf{x}_i$ may differ from that around $\mathbf{x}_j$.
+\end{remark}
+
+To obtain a symmetric representation, UMAP symmetrizes using a fuzzy set union (probabilistic $t$-conorm):
+\begin{equation}\label{eq:umap-symmetrize}
+  w_{ij} = w_{i \to j} + w_{j \to i} - w_{i \to j} \cdot w_{j \to i}.
+\end{equation}
+This formula comes from the probabilistic interpretation: if $w_{i \to j}$ is the probability that edge $(i,j)$ exists according to $i$'s local view, then $w_{ij}$ is the probability it exists in at least one view.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[scale=1.0]
+  % Left: k-NN graph construction
+  \begin{scope}[shift={(-4,0)}]
+    % Central point
+    \fill[red] (0,0) circle (4pt);
+    \node[below] at (0,-0.35) {$\mathbf{x}_i$};
+
+    % Local neighborhood circle
+    \draw[dashed, blue!50, thick] (0,0) circle (1.8);
+    \node[blue!70] at (2.1,0.8) {\small $\sigma_i$};
+
+    % Neighbors (k=4) with labels
+    \fill[blue] (0.8,0.5) circle (3pt);
+    \fill[blue] (-0.5,0.9) circle (3pt);
+    \fill[blue] (0.3,-0.7) circle (3pt);
+    \fill[blue] (-0.9,-0.3) circle (3pt);
+
+    % Edges with varying thickness (weight)
+    \draw[line width=2.5pt, blue!70] (0,0) -- (0.8,0.5);
+    \draw[line width=2.0pt, blue!55] (0,0) -- (-0.5,0.9);
+    \draw[line width=1.5pt, blue!40] (0,0) -- (0.3,-0.7);
+    \draw[line width=1.0pt, blue!25] (0,0) -- (-0.9,-0.3);
+
+    % Far points (not connected)
+    \fill[gray!40] (2.2,0.3) circle (2pt);
+    \fill[gray!40] (-1.8,1.5) circle (2pt);
+    \fill[gray!40] (1.5,-1.8) circle (2pt);
+
+    \node[font=\bfseries] at (0,-2.6) {(a) $k$-NN from $\mathbf{x}_i$};
+  \end{scope}
+
+  % Right: Symmetrized fuzzy graph
+  \begin{scope}[shift={(4,0)}]
+    % Points with labels
+    \node[circle, fill=blue, inner sep=2pt, label=above:{\scriptsize $1$}] (n1) at (-1.2,1) {};
+    \node[circle, fill=blue, inner sep=2pt, label=above:{\scriptsize $2$}] (n2) at (1.2,1) {};
+    \node[circle, fill=blue, inner sep=2pt, label=right:{\scriptsize $3$}] (n3) at (1.5,-0.5) {};
+    \node[circle, fill=blue, inner sep=2pt, label=left:{\scriptsize $4$}] (n4) at (-1.5,-0.5) {};
+    \node[circle, fill=blue, inner sep=2pt, label=below:{\scriptsize $5$}] (n5) at (0,-1.2) {};
+    \node[circle, fill=blue, inner sep=2pt, label=above:{\scriptsize $6$}] (n6) at (0,0.2) {};
+
+    % Edges with varying line width (symmetric weights)
+    \draw[line width=2.2pt, blue!60] (n1) -- (n6);
+    \draw[line width=1.8pt, blue!50] (n2) -- (n6);
+    \draw[line width=2.5pt, blue!70] (n1) -- (n4);
+    \draw[line width=2.0pt, blue!55] (n2) -- (n3);
+    \draw[line width=1.4pt, blue!40] (n4) -- (n5);
+    \draw[line width=1.4pt, blue!40] (n3) -- (n5);
+    \draw[line width=1.2pt, blue!35] (n6) -- (n5);
+    \draw[line width=0.8pt, blue!25] (n4) -- (n3);
+
+    \node[font=\bfseries] at (0,-2.6) {(b) Symmetrized graph};
+  \end{scope}
+\end{tikzpicture}
+\caption{Construction of the fuzzy simplicial set. (a) For each point $\mathbf{x}_i$, edges connect to $k$ nearest neighbors with weights $w_{i \to j}$ that decay exponentially with distance (edge thickness indicates weight). The local scale $\sigma_i$ normalizes for varying density. (b) The final graph has symmetric weights obtained by fuzzy union: $w_{ij} = w_{i \to j} + w_{j \to i} - w_{i \to j} w_{j \to i}$.}
+\label{fig:umap-graph}
+\end{figure}
+
+\subsection{The Optimization Problem}
+
+Given the high-dimensional fuzzy graph $G^{(h)}$ with weights $\{w_{ij}^{(h)}\}$, UMAP seeks a low-dimensional embedding $\mathbf{y}_1, \dots, \mathbf{y}_N \in \mathbb{R}^m$ (typically $m = 2$ or $3$) whose fuzzy graph $G^{(\ell)}$ has similar structure.
+
+\subsubsection{Low-Dimensional Edge Weights}
+
+In the embedding space, edge weights are computed using a Student $t$-distribution kernel (similar to $t$-SNE):
+\begin{equation}\label{eq:umap-low-weight}
+  w_{ij}^{(\ell)} = \left(1 + a\|\mathbf{y}_i - \mathbf{y}_j\|^{2b}\right)^{-1},
+\end{equation}
+where $a, b > 0$ are hyperparameters (default: $a \approx 1.93$, $b \approx 0.79$, chosen to approximate a specific target distribution).
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[scale=0.9]
+  % High-dimensional kernel
+  \begin{scope}[shift={(-4.5,0)}]
+    \draw[->, thick] (-0.3,0) -- (4.2,0) node[right] {$d(\mathbf{x}_i, \mathbf{x}_j)$};
+    \draw[->, thick] (0,-0.3) -- (0,2.7) node[above] {$w_{i \to j}$};
+
+    % Exponential decay starting from rho
+    \draw[very thick, blue, domain=0.5:4, samples=50] plot (\x, {2.2*exp(-1.2*(\x-0.5))});
+    \draw[very thick, blue] (0,2.2) -- (0.5,2.2);
+
+    % Mark rho
+    \draw[dashed, gray] (0.5,0) -- (0.5,2.2);
+    \node[below] at (0.5,-0.1) {\small $\rho_i$};
+
+    % Mark 1 on y-axis
+    \draw (0.08,2.2) -- (-0.08,2.2) node[left] {\small $1$};
+
+    \node[font=\bfseries] at (2,-1.2) {(a) High-dimensional};
+    \node[font=\small] at (2,-1.7) {Exponential decay};
+  \end{scope}
+
+  % Low-dimensional kernel
+  \begin{scope}[shift={(4.5,0)}]
+    \draw[->, thick] (-0.3,0) -- (4.2,0) node[right] {$\|\mathbf{y}_i - \mathbf{y}_j\|$};
+    \draw[->, thick] (0,-0.3) -- (0,2.7) node[above] {$w_{ij}^{(\ell)}$};
+
+    % Student-t like (heavy tails) - red
+    \draw[very thick, red!80!black, domain=0:4, samples=60] plot (\x, {2.2/(1+1.5*\x*\x)});
+
+    % Gaussian for comparison (dashed blue)
+    \draw[thick, dashed, blue!60, domain=0:4, samples=50] plot (\x, {2.2*exp(-1.2*\x)});
+
+    % Mark 1 on y-axis
+    \draw (0.08,2.2) -- (-0.08,2.2) node[left] {\small $1$};
+
+    % Legend
+    \draw[very thick, red!80!black] (2.8,2.3) -- (3.3,2.3);
+    \node[right, font=\scriptsize] at (3.35,2.3) {Student-$t$};
+    \draw[thick, dashed, blue!60] (2.8,1.9) -- (3.3,1.9);
+    \node[right, font=\scriptsize] at (3.35,1.9) {Gaussian};
+
+    \node[font=\bfseries] at (2,-1.2) {(b) Low-dimensional};
+    \node[font=\small] at (2,-1.7) {Heavy-tailed kernel};
+  \end{scope}
+\end{tikzpicture}
+\caption{Comparison of similarity kernels. (a) In high dimensions, edge weights decay exponentially from the nearest neighbor distance $\rho_i$. (b) In the embedding, UMAP uses a heavy-tailed Student-$t$ kernel (solid) instead of a Gaussian (dashed). The heavier tails allow moderately distant points to exert repulsive forces, preventing cluster collapse.}
+\label{fig:umap-kernels}
+\end{figure}
+
+\subsubsection{Cross-Entropy Loss}
+
+The discrepancy between the high-dimensional and low-dimensional fuzzy graphs is measured by fuzzy set cross-entropy:
+\begin{equation}\label{eq:umap-loss}
+  \mathcal{L}(\mathbf{y}_1, \dots, \mathbf{y}_N) = \sum_{i < j} \left[ w_{ij}^{(h)} \log\frac{w_{ij}^{(h)}}{w_{ij}^{(\ell)}} + (1 - w_{ij}^{(h)}) \log\frac{1 - w_{ij}^{(h)}}{1 - w_{ij}^{(\ell)}} \right].
+\end{equation}
+
+\begin{remark}[Interpretation of the loss]\leavevmode
+  \begin{itemize}
+    \item The first term penalizes when points that are close in high dimensions ($w_{ij}^{(h)}$ large) become far apart in the embedding ($w_{ij}^{(\ell)}$ small). This preserves \emph{local structure}.
+    \item The second term penalizes when points that are far apart in high dimensions ($w_{ij}^{(h)}$ small) become close in the embedding ($w_{ij}^{(\ell)}$ large). This preserves \emph{global structure} and prevents collapse.
+  \end{itemize}
+\end{remark}
+
+\begin{theorem}[UMAP gradient]\label{thm:umap-gradient}
+  The gradient of the cross-entropy loss \eqref{eq:umap-loss} with respect to embedding point $\mathbf{y}_i$ is
+  \begin{equation}\label{eq:umap-gradient}
+    \frac{\partial \mathcal{L}}{\partial \mathbf{y}_i} = \sum_{j \neq i} \left[ \underbrace{-2ab \, w_{ij}^{(h)} \left(w_{ij}^{(\ell)}\right)^2 d_{ij}^{2(b-1)}}_{\text{attractive}}  + \underbrace{\frac{2ab \, (1-w_{ij}^{(h)}) w_{ij}^{(\ell)} d_{ij}^{2(b-1)}}{1 - w_{ij}^{(\ell)}}}_{\text{repulsive}} \right] (\mathbf{y}_i - \mathbf{y}_j),
+  \end{equation}
+  where $d_{ij} = \|\mathbf{y}_i - \mathbf{y}_j\|$ and $w_{ij}^{(\ell)} = (1 + a \, d_{ij}^{2b})^{-1}$.
+\end{theorem}
+
+\begin{proof}
+  We compute the gradient in three steps.
+
+  \textbf{Step 1: Derivative of the low-dimensional weight.}
+  Let $d_{ij} = \|\mathbf{y}_i - \mathbf{y}_j\|$ denote the Euclidean distance. The low-dimensional weight is
+  \[
+    w_{ij}^{(\ell)} = \frac{1}{1 + a \, d_{ij}^{2b}}.
+  \]
+  Taking the derivative with respect to $d_{ij}^2$:
+  \[
+    \frac{\partial w_{ij}^{(\ell)}}{\partial (d_{ij}^2)} = \frac{-ab \, d_{ij}^{2(b-1)}}{(1 + a \, d_{ij}^{2b})^2} = -ab \, d_{ij}^{2(b-1)} \left(w_{ij}^{(\ell)}\right)^2.
+  \]
+  Since $d_{ij}^2 = \|\mathbf{y}_i - \mathbf{y}_j\|^2$, we have $\frac{\partial (d_{ij}^2)}{\partial \mathbf{y}_i} = 2(\mathbf{y}_i - \mathbf{y}_j)$. By the chain rule:
+  \begin{equation}\label{eq:weight-gradient}
+    \frac{\partial w_{ij}^{(\ell)}}{\partial \mathbf{y}_i} = -2ab \, d_{ij}^{2(b-1)} \left(w_{ij}^{(\ell)}\right)^2 (\mathbf{y}_i - \mathbf{y}_j).
+  \end{equation}
+
+  \textbf{Step 2: Derivative of the cross-entropy terms.}
+  The loss decomposes as $\mathcal{L} = \sum_{i < j} \mathcal{L}_{ij}$ where
+  \[
+    \mathcal{L}_{ij} = w_{ij}^{(h)} \log\frac{w_{ij}^{(h)}}{w_{ij}^{(\ell)}} + (1 - w_{ij}^{(h)}) \log\frac{1 - w_{ij}^{(h)}}{1 - w_{ij}^{(\ell)}}.
+  \]
+  The high-dimensional weights $w_{ij}^{(h)}$ are constants (computed once from the input data). Differentiating with respect to $w_{ij}^{(\ell)}$:
+  \[
+    \frac{\partial \mathcal{L}_{ij}}{\partial w_{ij}^{(\ell)}} = \frac{-w_{ij}^{(h)}}{w_{ij}^{(\ell)}} + \frac{1 - w_{ij}^{(h)}}{1 - w_{ij}^{(\ell)}}.
+  \]
+
+  \textbf{Step 3: Combining via chain rule.}
+  Applying the chain rule $\frac{\partial \mathcal{L}_{ij}}{\partial \mathbf{y}_i} = \frac{\partial \mathcal{L}_{ij}}{\partial w_{ij}^{(\ell)}} \cdot \frac{\partial w_{ij}^{(\ell)}}{\partial \mathbf{y}_i}$ and substituting \eqref{eq:weight-gradient}:
+  \begin{align*}
+    \frac{\partial \mathcal{L}_{ij}}{\partial \mathbf{y}_i}
+     & = \left( \frac{-w_{ij}^{(h)}}{w_{ij}^{(\ell)}} + \frac{1 - w_{ij}^{(h)}}{1 - w_{ij}^{(\ell)}} \right) \cdot \left( -2ab \, d_{ij}^{2(b-1)} \left(w_{ij}^{(\ell)}\right)^2 (\mathbf{y}_i - \mathbf{y}_j) \right) \\
+     & = 2ab \, d_{ij}^{2(b-1)} \left( w_{ij}^{(h)} \, w_{ij}^{(\ell)} - \frac{(1 - w_{ij}^{(h)}) \left(w_{ij}^{(\ell)}\right)^2}{1 - w_{ij}^{(\ell)}} \right) (\mathbf{y}_i - \mathbf{y}_j).
+  \end{align*}
+  Rearranging and summing over all $j \neq i$ (accounting for symmetry) yields \eqref{eq:umap-gradient}.
+\end{proof}
+
+\begin{corollary}[Attractive and repulsive forces]
+  The gradient update $\mathbf{y}_i \leftarrow \mathbf{y}_i - \eta \frac{\partial \mathcal{L}}{\partial \mathbf{y}_i}$ decomposes into:
+  \begin{itemize}
+    \item \textbf{Attractive force} from neighbor $j$: When $w_{ij}^{(h)}$ is large (points are neighbors in high dimensions), the first term dominates, producing a force proportional to $-(\mathbf{y}_i - \mathbf{y}_j)$ that pulls $\mathbf{y}_i$ toward $\mathbf{y}_j$.
+    \item \textbf{Repulsive force} from non-neighbor $k$: When $w_{ik}^{(h)}$ is small, the second term dominates, producing a force proportional to $+(\mathbf{y}_i - \mathbf{y}_k)$ that pushes $\mathbf{y}_i$ away from $\mathbf{y}_k$.
+  \end{itemize}
+\end{corollary}
+
+\begin{remark}[Negative sampling]
+  Computing the full gradient requires summing over all $O(N^2)$ pairs, which is prohibitive for large $N$. UMAP uses \emph{negative sampling}: for each edge $(i,j)$ with large $w_{ij}^{(h)}$, compute the attractive term exactly, but approximate the repulsive sum by sampling a small number of random ``negative'' points $k$ with probability proportional to their degree. This reduces complexity to $O(N)$ per iteration while preserving the gradient direction in expectation.
+\end{remark}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[scale=1.0, >=stealth]
+  % Attractive forces
+  \begin{scope}[shift={(-4,0)}]
+    % Central point
+    \fill[red!80!black] (0,0) circle (5pt);
+    \node[below] at (0,-0.4) {$\mathbf{y}_i$};
+
+    % Neighbors being pulled (blue = high-dim neighbors)
+    \fill[blue!70] (1.9,0.9) circle (4pt);
+    \fill[blue!70] (-1.6,1.3) circle (4pt);
+    \fill[blue!70] (1.3,-1.5) circle (4pt);
+
+    % Dashed lines showing high-dim connection
+    \draw[dashed, gray, thick] (0,0) -- (1.9,0.9);
+    \draw[dashed, gray, thick] (0,0) -- (-1.6,1.3);
+    \draw[dashed, gray, thick] (0,0) -- (1.3,-1.5);
+
+    % Attractive arrows (pointing inward) - green
+    \draw[->, line width=2pt, green!60!black] (1.9,0.9) -- (1.15,0.55);
+    \draw[->, line width=2pt, green!60!black] (-1.6,1.3) -- (-0.95,0.78);
+    \draw[->, line width=2pt, green!60!black] (1.3,-1.5) -- (0.78,-0.9);
+
+    % Labels
+    \node[blue!70, font=\scriptsize] at (2.3,1.1) {$\mathbf{y}_j$};
+    \node[font=\bfseries] at (0,-2.5) {(a) Attractive};
+    \node[font=\small, green!50!black] at (0,-3.0) {$w_{ij}^{(h)}$ large};
+  \end{scope}
+
+  % Repulsive forces
+  \begin{scope}[shift={(4,0)}]
+    % Central point
+    \fill[red!80!black] (0,0) circle (5pt);
+    \node[below] at (0,-0.4) {$\mathbf{y}_i$};
+
+    % Non-neighbors (gray = not connected in high-dim)
+    \fill[gray!60] (1.0,0.5) circle (4pt);
+    \fill[gray!60] (-0.8,0.7) circle (4pt);
+    \fill[gray!60] (0.6,-0.9) circle (4pt);
+
+    % Repulsive arrows (pointing outward) - red
+    \draw[->, line width=2pt, red!70!black] (1.0,0.5) -- (1.7,0.85);
+    \draw[->, line width=2pt, red!70!black] (-0.8,0.7) -- (-1.4,1.2);
+    \draw[->, line width=2pt, red!70!black] (0.6,-0.9) -- (1.0,-1.5);
+
+    % Labels
+    \node[gray!60, font=\scriptsize] at (1.4,0.25) {$\mathbf{y}_k$};
+    \node[font=\bfseries] at (0,-2.5) {(b) Repulsive};
+    \node[font=\small, red!60!black] at (0,-3.0) {$w_{ik}^{(h)}$ small};
+  \end{scope}
+\end{tikzpicture}
+\caption{Forces during UMAP optimization. (a) Points that are neighbors in high dimensions (large $w_{ij}^{(h)}$, dashed lines) experience attractive forces pulling them together in the embedding. (b) Points that are distant in high dimensions (small $w_{ik}^{(h)}$, sampled as negative examples) experience repulsive forces pushing them apart. The balance preserves local structure while preventing global collapse.}
+\label{fig:umap-forces}
+\end{figure}
+
+\begin{example}[Circle vs.\ Swiss roll: topology matters]\label{ex:circle-topology}
+  A natural question arises: if UMAP ``unrolls'' the Swiss roll into a rectangle, would it unroll a \emph{circle} $S^1$ into a line segment?
+
+  The answer is \textbf{no}. The key difference is \emph{topological}:
+  \begin{itemize}
+    \item The Swiss roll is homeomorphic to a rectangle $[0,1] \times [0,1]$---it has boundary and is \emph{simply connected} (any loop can be continuously shrunk to a point).
+    \item The circle $S^1$ has no boundary and is \emph{not simply connected}---a loop around the circle cannot be shrunk to a point without leaving the manifold.
+  \end{itemize}
+
+  UMAP preserves local neighborhoods via the fuzzy simplicial set construction. For a circle, each point $\mathbf{x}_i$ has neighbors on both sides, forming a chain that wraps around:
+  \[
+    \mathbf{x}_1 \leftrightarrow \mathbf{x}_2 \leftrightarrow \cdots \leftrightarrow \mathbf{x}_N \leftrightarrow \mathbf{x}_1.
+  \]
+  To ``unroll'' this into a line segment $[a,b]$, UMAP would need to \emph{cut} the circle somewhere, separating two adjacent points $\mathbf{x}_i$ and $\mathbf{x}_{i+1}$ that have high edge weight $w_{i,i+1}^{(h)}$. This would incur a large attractive penalty in the cross-entropy loss \eqref{eq:umap-loss}.
+
+  Instead, UMAP embeds the circle as a closed curve in $\mathbb{R}^2$---preserving both the local metric structure (nearby points stay nearby) and the global topology (the loop structure is maintained).
+\end{example}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[scale=0.9]
+  % Left: Circle in high dimensions
+  \begin{scope}[shift={(-4.5,0)}]
+    % Draw circle with color gradient
+    \foreach \angle in {0,20,...,340} {
+      \pgfmathsetmacro{\col}{\angle/360*100}
+      \fill[red!\col!blue] ({1.3*cos(\angle)}, {1.3*sin(\angle)}) circle (2pt);
+    }
+    \draw[gray, thick, dashed] (0,0) circle (1.3);
+    \node[font=\bfseries] at (0,-2.3) {(a) Circle $S^1$ in $\mathbb{R}^2$};
+  \end{scope}
+
+  % Arrow
+  \draw[->, very thick, gray] (-2.5,0) -- (-1.5,0) node[midway, above] {\small UMAP};
+
+  % Right: Circle preserved (not unrolled)
+  \begin{scope}[shift={(1,0)}]
+    % Draw slightly deformed circle (UMAP output)
+    \foreach \angle in {0,20,...,340} {
+      \pgfmathsetmacro{\col}{\angle/360*100}
+      \pgfmathsetmacro{\r}{1.2 + 0.15*sin(3*\angle)}
+      \fill[red!\col!blue] ({\r*cos(\angle)}, {\r*sin(\angle)}) circle (2pt);
+    }
+    \node[font=\bfseries] at (0,-2.3) {(b) UMAP embedding};
+    \node[font=\small] at (0,-2.8) {Topology preserved};
+  \end{scope}
+
+  % Wrong: if it were unrolled
+  \begin{scope}[shift={(5.5,0)}]
+    % Line segment (wrong!)
+    \foreach \i in {0,1,...,17} {
+      \pgfmathsetmacro{\col}{\i/17*100}
+      \fill[red!\col!blue] ({-1.5 + \i*0.176}, 0) circle (2pt);
+    }
+    \draw[thick, red, opacity=0.5] (-1.7,-0.3) -- (1.7,-0.3) -- (1.7,0.3) -- (-1.7,0.3) -- cycle;
+    \draw[red, thick] (-1.7,-0.5) -- (-1.7,0.5);
+    \draw[red, thick] (1.7,-0.5) -- (1.7,0.5);
+    \node[red, font=\scriptsize] at (-1.7, -0.7) {cut};
+    \node[red, font=\scriptsize] at (1.7, -0.7) {cut};
+    \node[font=\bfseries] at (0,-2.3) {(c) Line segment};
+    \node[font=\small, red!70!black] at (0,-2.8) {Would break neighbors};
+  \end{scope}
+\end{tikzpicture}
+\caption{UMAP preserves topology. (a) Points sampled uniformly from a circle, colored by angle. (b) UMAP embeds this as a closed curve, preserving the cyclic neighbor structure. (c) Unrolling to a line segment would require cutting the circle, separating neighbors that have high affinity $w_{ij}^{(h)}$---UMAP's loss function penalizes this.}
+\label{fig:circle-topology}
+\end{figure}
+
+\subsection{Algorithm Summary}
+
+\begin{enumerate}
+  \item \textbf{Construct $k$-NN graph}: For each $\mathbf{x}_i$, find its $k$ nearest neighbors.
+  \item \textbf{Compute local scales}: Solve \eqref{eq:umap-sigma} for each $\sigma_i$ using binary search.
+  \item \textbf{Build fuzzy graph}: Compute directed weights \eqref{eq:umap-weight} and symmetrize via \eqref{eq:umap-symmetrize}.
+  \item \textbf{Initialize embedding}: Use spectral embedding (eigenvectors of graph Laplacian) or random initialization.
+  \item \textbf{Optimize}: Minimize cross-entropy \eqref{eq:umap-loss} via SGD with negative sampling.
+\end{enumerate}
+
+\subsection{Comparison with PCA}
+
+\begin{center}
+  \begin{tabular}{lll}
+    \hline
+    \textbf{Property}        & \textbf{PCA}          & \textbf{UMAP}                    \\
+    \hline
+    Structure captured       & Linear (subspaces)    & Nonlinear (manifolds)            \\
+    Objective                & Maximize variance     & Preserve fuzzy topology          \\
+    Computational complexity & $O(d^2 N + d^3)$      & $O(N^{1.14})$ empirically        \\
+    Deterministic            & Yes                   & No (stochastic optimization)     \\
+    Out-of-sample extension  & Simple ($\mathbf{W}^{\mathsf{T}}\mathbf{x}$) & Requires approximation \\
+    Interpretability         & Principal components  & Less interpretable               \\
+    \hline
+  \end{tabular}
+\end{center}
+
+\subsection{Applications}
+
+\subsubsection{Single-Cell RNA Sequencing}
+In computational biology, single-cell RNA-seq produces expression profiles for thousands of genes across thousands of cells. UMAP is the standard tool for visualizing this data, revealing cell types, developmental trajectories, and rare cell populations that PCA would fail to separate.
+
+\subsubsection{Natural Language Processing}
+Word embeddings (e.g., Word2Vec, GloVe) live in high-dimensional spaces where semantic relationships are encoded as directions. UMAP can project these to 2D for visualization, revealing clusters of semantically related words while preserving analogical structure.
+
+\subsubsection{Image Embeddings}
+Deep neural networks produce high-dimensional feature vectors for images. UMAP visualization of these embeddings reveals how the network organizes visual concepts, useful for debugging classifiers and understanding learned representations.
+
+\subsubsection{Text Embeddings on the Unit Sphere}
+
+Modern text embedding models (OpenAI's \texttt{text-embedding-ada-002}, Cohere, Voyage, etc.) produce high-dimensional vectors $\mathbf{v} \in \mathbb{R}^d$ (typically $d = 1536$ or $d = 3072$) that are $L^2$-normalized to lie on the unit sphere:
+\[
+  \|\mathbf{v}\| = 1, \quad \text{so } \mathbf{v} \in S^{d-1}.
+\]
+For these embeddings, similarity is measured by \emph{cosine similarity}, which on the unit sphere equals the dot product: $\cos\theta = \mathbf{v}_i^\top \mathbf{v}_j$.
+
+\begin{remark}[Practical considerations for UMAP on text embeddings]\label{rem:umap-text-embeddings}\leavevmode
+  \begin{enumerate}
+    \item \textbf{Use cosine or angular distance}: Since the embeddings lie on $S^{d-1}$, Euclidean distance in $\mathbb{R}^d$ is a monotonic transformation of cosine similarity:
+    \[
+      \|\mathbf{v}_i - \mathbf{v}_j\|^2 = 2(1 - \mathbf{v}_i^\top \mathbf{v}_j) = 2(1 - \cos\theta_{ij}).
+    \]
+    UMAP with \texttt{metric='cosine'} or \texttt{metric='euclidean'} will produce similar results on normalized vectors, but cosine is semantically clearer.
+
+    \item \textbf{Beware of density distortion}: Text corpora are fundamentally non-uniform---common topics (sports, politics) have dense clusters while niche topics (15th-century Flemish art) are sparse. Per Remark~\ref{rem:umap-sphere}:
+    \begin{itemize}
+      \item Cluster \emph{sizes} in the UMAP plot do not reflect true cluster sizes in the corpus.
+      \item A cluster of 10,000 news articles about politics may appear similar in size to 100 articles about a rare disease.
+      \item Inter-cluster distances are unreliable for comparing semantic similarity across density regimes.
+    \end{itemize}
+
+    \item \textbf{What UMAP \emph{does} preserve}: Despite density distortion, UMAP reliably preserves:
+    \begin{itemize}
+      \item \emph{Neighborhood membership}: Documents that are semantically similar will be placed near each other.
+      \item \emph{Cluster separation}: Distinct topics will form visually separate clusters.
+      \item \emph{Relative structure within density-homogeneous regions}: Within a single cluster, local structure is meaningful.
+    \end{itemize}
+
+    \item \textbf{Recommended workflow}:
+    \begin{itemize}
+      \item Use UMAP for \emph{exploration}: identifying clusters, finding outliers, understanding corpus structure.
+      \item For \emph{quantitative analysis} (e.g., ``how similar are these two documents?''), use cosine similarity directly in the original $\mathbb{R}^d$ space.
+      \item To compare cluster sizes or densities, compute statistics in the original space, not from the UMAP coordinates.
+      \item Consider coloring points by metadata (date, source, label) to interpret clusters, since position alone can be misleading.
+    \end{itemize}
+
+    \item \textbf{Hyperparameter guidance}:
+    \begin{itemize}
+      \item \texttt{n\_neighbors}: Larger values (e.g., 30--50) preserve more global structure; smaller values (e.g., 5--15) emphasize local clusters. For text embeddings with many fine-grained topics, start with 15.
+      \item \texttt{min\_dist}: Controls how tightly points cluster. For visualization, 0.1 works well; for preserving more structure, try 0.0.
+      \item \texttt{n\_components}: Usually 2 for visualization; 3 for interactive 3D plots.
+    \end{itemize}
+  \end{enumerate}
+\end{remark}
+

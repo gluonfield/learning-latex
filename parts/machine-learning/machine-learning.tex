@@ -3298,3 +3298,940 @@ During autoregressive generation, we can cache computed keys and values to avoid
     \end{tikzpicture}
 \caption{Depth vs width in transformer architecture: depth enables sequential compositional reasoning while width enables parallel pattern matching.}
 \end{figure}
+
+% ============================================================
+% ============================================================
+\chapter{Energy-Based Models}
+
+Energy-based models (EBMs) provide a unified framework for modeling data by associating a scalar \emph{energy} with each configuration. Low energy configurations are ``good'' (likely), high energy configurations are ``bad'' (unlikely). This chapter develops the theory and connects EBMs to probabilistic modeling.
+
+% ============================================================
+\section{The Energy Function}
+
+\begin{definition}[Energy-Based Model]
+    An \textbf{energy-based model} defines a function $E_\theta: \mathcal{X} \to \mathbb{R}$ called the \textbf{energy function}, parameterized by $\theta$. The model assigns:
+    \begin{itemize}
+        \item \textbf{Low energy} to configurations $x$ that are ``desirable'' or consistent with observed data
+        \item \textbf{High energy} to configurations that are ``undesirable'' or inconsistent
+    \end{itemize}
+    Learning involves adjusting $\theta$ so that training data receives lower energy than other configurations.
+\end{definition}
+
+\begin{remark}[Intuition]
+    Think of energy as a ``cost'' or ``incompatibility score'':
+    \begin{itemize}
+        \item A face detector assigns low energy to images containing faces
+        \item A language model assigns low energy to grammatical sentences
+        \item A physics simulator assigns low energy to stable configurations
+    \end{itemize}
+    The energy function captures what makes a configuration ``good'' without explicitly defining a probability distribution.
+\end{remark}
+
+\begin{figure}[h]
+\centering
+    \begin{tikzpicture}[>=stealth, scale=0.9]
+        % Energy landscape
+        \draw[->] (-4,0) -- (4,0) node[right] {$x$};
+        \draw[->] (-3.5,-0.5) -- (-3.5,3) node[above] {$E(x)$};
+
+        % Energy curve with multiple minima
+        \draw[thick, blue, domain=-3.3:3.3, samples=100] plot (\x, {0.3*(\x+2)*(\x+2)*(\x-1)*(\x-1)*0.15 + 0.5});
+
+        % Mark minima
+        \fill[red] (-2, 0.5) circle (3pt);
+        \fill[red] (1, 0.5) circle (3pt);
+        \node[below, font=\small] at (-2, 0.3) {data mode};
+        \node[below, font=\small] at (1, 0.3) {data mode};
+
+        % Mark high energy region
+        \draw[<-, dashed] (2.5, 2.2) -- (3.5, 2.5) node[right, font=\small] {unlikely};
+
+        % Label
+        \node at (0, -1) {Energy landscape with two modes};
+    \end{tikzpicture}
+\caption{Energy function defining a landscape. Data concentrates at energy minima (modes).}
+\end{figure}
+
+% ============================================================
+\section{From Energy to Probability: The Boltzmann Distribution}
+
+To perform probabilistic inference, we convert energy to probability via the \emph{Boltzmann distribution} (also called Gibbs distribution).
+
+\begin{definition}[Boltzmann Distribution]
+    Given an energy function $E_\theta(x)$, the associated \textbf{Boltzmann distribution} is:
+    \[
+        p_\theta(x) = \frac{\exp(-E_\theta(x))}{Z_\theta}
+    \]
+    where the \textbf{partition function} (normalizing constant) is:
+    \[
+        Z_\theta = \int_{\mathcal{X}} \exp(-E_\theta(x)) \, dx
+    \]
+    For discrete $\mathcal{X}$, the integral becomes a sum.
+\end{definition}
+
+\begin{remark}[Temperature Scaling]
+    More generally, we can include a \textbf{temperature} parameter $T > 0$:
+    \[
+        p_\theta(x; T) = \frac{\exp(-E_\theta(x)/T)}{Z_\theta(T)}
+    \]
+    \begin{itemize}
+        \item $T \to 0$: Distribution concentrates on global minimum (deterministic)
+        \item $T = 1$: Standard Boltzmann distribution
+        \item $T \to \infty$: Distribution becomes uniform (maximum entropy)
+    \end{itemize}
+    Temperature controls the ``sharpness'' of the distribution around energy minima.
+\end{remark}
+
+\begin{figure}[h]
+\centering
+    \begin{tikzpicture}[>=stealth, scale=0.8]
+        % Low temperature
+        \begin{scope}
+            \draw[->] (-2.5,0) -- (2.5,0) node[right] {$x$};
+            \draw[->] (-2,-0.3) -- (-2,2.5) node[above] {$p(x)$};
+            \draw[thick, blue, domain=-2.2:2.2, samples=50] plot (\x, {2*exp(-2*\x*\x)});
+            \node at (0, -0.8) {\small Low $T$};
+            \node at (0, -1.3) {\small (concentrated)};
+        \end{scope}
+
+        % Medium temperature
+        \begin{scope}[shift={(6,0)}]
+            \draw[->] (-2.5,0) -- (2.5,0) node[right] {$x$};
+            \draw[->] (-2,-0.3) -- (-2,2.5) node[above] {$p(x)$};
+            \draw[thick, orange, domain=-2.2:2.2, samples=50] plot (\x, {1.2*exp(-0.5*\x*\x)});
+            \node at (0, -0.8) {\small $T = 1$};
+            \node at (0, -1.3) {\small (standard)};
+        \end{scope}
+
+        % High temperature
+        \begin{scope}[shift={(12,0)}]
+            \draw[->] (-2.5,0) -- (2.5,0) node[right] {$x$};
+            \draw[->] (-2,-0.3) -- (-2,2.5) node[above] {$p(x)$};
+            \draw[thick, red, domain=-2.2:2.2, samples=50] plot (\x, {0.6*exp(-0.1*\x*\x)});
+            \node at (0, -0.8) {\small High $T$};
+            \node at (0, -1.3) {\small (diffuse)};
+        \end{scope}
+    \end{tikzpicture}
+\caption{Effect of temperature on the Boltzmann distribution. Lower temperature concentrates probability mass at energy minima.}
+\end{figure}
+
+\begin{theorem}[Log-Probability and Energy]
+    The log-probability under an EBM decomposes as:
+    \[
+        \log p_\theta(x) = -E_\theta(x) - \log Z_\theta
+    \]
+    The partition function $\log Z_\theta$ is a constant with respect to $x$, so:
+    \[
+        \nabla_x \log p_\theta(x) = -\nabla_x E_\theta(x)
+    \]
+    The \textbf{score function} (gradient of log-density) equals the negative energy gradient.
+\end{theorem}
+
+% ============================================================
+\section{The Partition Function Problem}
+
+The central challenge in EBMs is computing the partition function $Z_\theta$.
+
+\begin{remark}[Intractability of $Z_\theta$]
+    For most interesting energy functions, $Z_\theta$ is \textbf{intractable}:
+    \begin{itemize}
+        \item Continuous $\mathcal{X}$: Requires integrating over all possible inputs
+        \item Discrete $\mathcal{X}$: Requires summing over exponentially many configurations
+        \item No closed form: Neural network energy functions don't admit analytical integration
+    \end{itemize}
+    This intractability affects both:
+    \begin{enumerate}
+        \item \textbf{Evaluation}: Computing $p_\theta(x)$ for a given $x$
+        \item \textbf{Training}: Computing gradients $\nabla_\theta \log p_\theta(x)$
+    \end{enumerate}
+\end{remark}
+
+\begin{theorem}[Gradient of Log-Likelihood]
+    For a single data point $x$, the gradient of the log-likelihood is:
+    \[
+        \nabla_\theta \log p_\theta(x) = -\nabla_\theta E_\theta(x) + \mathbb{E}_{x' \sim p_\theta}[\nabla_\theta E_\theta(x')]
+    \]
+    \begin{proof}
+        Starting from $\log p_\theta(x) = -E_\theta(x) - \log Z_\theta$:
+        \[
+            \nabla_\theta \log p_\theta(x) = -\nabla_\theta E_\theta(x) - \nabla_\theta \log Z_\theta
+        \]
+        For the partition function term:
+        \begin{align*}
+            \nabla_\theta \log Z_\theta &= \frac{1}{Z_\theta} \nabla_\theta Z_\theta = \frac{1}{Z_\theta} \nabla_\theta \int \exp(-E_\theta(x')) \, dx' \\
+            &= \frac{1}{Z_\theta} \int \exp(-E_\theta(x')) \cdot (-\nabla_\theta E_\theta(x')) \, dx' \\
+            &= -\int p_\theta(x') \nabla_\theta E_\theta(x') \, dx' = -\mathbb{E}_{x' \sim p_\theta}[\nabla_\theta E_\theta(x')]
+        \end{align*}
+        Combining: $\nabla_\theta \log p_\theta(x) = -\nabla_\theta E_\theta(x) + \mathbb{E}_{x' \sim p_\theta}[\nabla_\theta E_\theta(x')]$.
+    \end{proof}
+\end{theorem}
+
+\begin{remark}[Interpretation: Positive and Negative Phase]
+    The gradient has two terms with intuitive meanings:
+    \begin{enumerate}
+        \item \textbf{Positive phase}: $-\nabla_\theta E_\theta(x)$ pushes down the energy of training data
+        \item \textbf{Negative phase}: $+\mathbb{E}_{x' \sim p_\theta}[\nabla_\theta E_\theta(x')]$ pushes up the energy of model samples
+    \end{enumerate}
+    Training balances these forces: lower energy for real data, higher energy for ``hallucinated'' samples.
+\end{remark}
+
+\begin{figure}[h]
+\centering
+    \begin{tikzpicture}[>=stealth, scale=0.85]
+        % Energy curve
+        \draw[->] (-4,0) -- (4,0) node[right] {$x$};
+        \draw[->] (-3.5,-0.5) -- (-3.5,3.5) node[above] {$E(x)$};
+        \draw[thick, blue, domain=-3.2:3.2, samples=100] plot (\x, {0.5*\x*\x*0.3 + 1});
+
+        % Data point - push down
+        \fill[green!70!black] (1, 1.15) circle (4pt);
+        \draw[->, thick, green!70!black] (1, 1.15) -- (1, 0.5);
+        \node[right, font=\small, green!70!black] at (1.2, 0.8) {positive phase};
+        \node[right, font=\small, green!70!black] at (1.2, 0.4) {(lower energy)};
+
+        % Model sample - push up
+        \fill[red] (-1.5, 1.34) circle (4pt);
+        \draw[->, thick, red] (-1.5, 1.34) -- (-1.5, 2.2);
+        \node[left, font=\small, red] at (-1.7, 1.8) {negative phase};
+        \node[left, font=\small, red] at (-1.7, 2.2) {(raise energy)};
+
+        % Labels
+        \node[below, font=\small] at (1, 0) {data $x$};
+        \node[below, font=\small] at (-1.5, 0) {sample $x'$};
+    \end{tikzpicture}
+\caption{The two phases of EBM training: push down energy of data (positive phase), push up energy of model samples (negative phase).}
+\end{figure}
+
+% ============================================================
+\section{Contrastive Divergence}
+
+Since sampling from $p_\theta$ is expensive, we approximate using MCMC.
+
+\begin{definition}[Contrastive Divergence (CD-$k$)]
+    \textbf{Contrastive Divergence} approximates the negative phase expectation using short MCMC runs:
+    \begin{enumerate}
+        \item Initialize chain at a data point: $x^{(0)} = x_{\text{data}}$
+        \item Run $k$ steps of MCMC (e.g., Gibbs sampling): $x^{(0)} \to x^{(1)} \to \cdots \to x^{(k)}$
+        \item Approximate gradient:
+        \[
+            \nabla_\theta \log p_\theta(x) \approx -\nabla_\theta E_\theta(x_{\text{data}}) + \nabla_\theta E_\theta(x^{(k)})
+        \]
+    \end{enumerate}
+    CD-1 (single MCMC step) is most common due to computational efficiency.
+\end{definition}
+
+\begin{remark}[Why CD Works]
+    CD is biased but often effective because:
+    \begin{itemize}
+        \item Starting from data, the chain quickly moves to nearby regions the model considers likely
+        \item These ``negative samples'' are precisely where the model is wrong
+        \item The bias decreases as $k \to \infty$ (full equilibrium)
+    \end{itemize}
+    CD trades statistical accuracy for computational efficiency.
+\end{remark}
+
+\begin{remark}[Persistent Contrastive Divergence (PCD)]
+    An improvement maintains \textbf{persistent chains} across gradient steps:
+    \begin{itemize}
+        \item Don't restart chains from data each iteration
+        \item Continue chains from previous iteration's endpoints
+        \item Chains gradually explore more of the distribution
+    \end{itemize}
+    PCD often produces better samples and more stable training than CD.
+\end{remark}
+
+% ============================================================
+\section{Score Matching}
+
+Score matching avoids computing $Z_\theta$ entirely by matching derivatives.
+
+\begin{definition}[Score Function]
+    The \textbf{score function} of a distribution $p(x)$ is the gradient of its log-density:
+    \[
+        s(x) = \nabla_x \log p(x)
+    \]
+    For an EBM: $s_\theta(x) = -\nabla_x E_\theta(x)$ (independent of $Z_\theta$!).
+\end{definition}
+
+\begin{theorem}[Score Matching Objective]
+    The \textbf{score matching} loss minimizes the expected squared difference between model and data scores:
+    \[
+        \mathcal{L}_{\text{SM}}(\theta) = \mathbb{E}_{x \sim p_{\text{data}}}\left[ \frac{1}{2} \| s_\theta(x) - s_{\text{data}}(x) \|^2 \right]
+    \]
+    This is equivalent (up to a constant) to the \textbf{explicit score matching} objective:
+    \[
+        \mathcal{L}_{\text{ESM}}(\theta) = \mathbb{E}_{x \sim p_{\text{data}}}\left[ \frac{1}{2} \| s_\theta(x) \|^2 + \nabla_x \cdot s_\theta(x) \right]
+    \]
+    where $\nabla_x \cdot s_\theta(x) = \sum_i \frac{\partial s_{\theta,i}(x)}{\partial x_i}$ is the divergence (trace of Jacobian).
+\end{theorem}
+
+\begin{remark}[Why Score Matching Works]
+    The key insight is that $s_{\text{data}}(x)$ doesn't appear in the computable objective:
+    \begin{itemize}
+        \item The true data score $s_{\text{data}}(x) = \nabla_x \log p_{\text{data}}(x)$ is unknown
+        \item But the cross-term $\mathbb{E}[s_\theta(x)^\top s_{\text{data}}(x)]$ can be converted via integration by parts
+        \item The result only requires samples from $p_{\text{data}}$ and gradients of $s_\theta$
+    \end{itemize}
+    No partition function, no MCMC sampling from the model!
+\end{remark}
+
+\begin{remark}[Denoising Score Matching]
+    Computing the divergence $\nabla_x \cdot s_\theta(x)$ is expensive for high dimensions. \textbf{Denoising score matching} offers an alternative:
+    \begin{enumerate}
+        \item Add noise to data: $\tilde{x} = x + \sigma \epsilon$, where $\epsilon \sim \mathcal{N}(0, I)$
+        \item Train to predict the score of the noised distribution:
+        \[
+            \mathcal{L}_{\text{DSM}}(\theta) = \mathbb{E}_{x, \epsilon}\left[ \left\| s_\theta(\tilde{x}) + \frac{\epsilon}{\sigma} \right\|^2 \right]
+        \]
+    \end{enumerate}
+    The optimal $s_\theta(\tilde{x})$ points back toward clean data---this is the foundation of \textbf{diffusion models}.
+\end{remark}
+
+% ============================================================
+\section{Noise Contrastive Estimation}
+
+Another approach: turn density estimation into classification.
+
+\begin{definition}[Noise Contrastive Estimation (NCE)]
+    NCE trains the model to distinguish data from noise:
+    \begin{enumerate}
+        \item Choose a noise distribution $p_n(x)$ (e.g., Gaussian)
+        \item Create a classification problem: Is $x$ from data or noise?
+        \item Train a classifier using the energy function
+    \end{enumerate}
+
+    The NCE objective is:
+    \[
+        \mathcal{L}_{\text{NCE}}(\theta) = \mathbb{E}_{x \sim p_{\text{data}}}[\log \sigma(E_n(x) - E_\theta(x))] + \mathbb{E}_{x \sim p_n}[\log \sigma(E_\theta(x) - E_n(x))]
+    \]
+    where $E_n(x) = -\log p_n(x)$ is the noise energy and $\sigma$ is the sigmoid.
+\end{definition}
+
+\begin{theorem}[NCE Consistency]
+    As the number of noise samples per data point $k \to \infty$, the NCE estimator converges to the maximum likelihood estimator. With $k$ noise samples per data point, NCE estimates:
+    \[
+        \log p_\theta(x) \approx -E_\theta(x) - \log Z_\theta
+    \]
+    where $\log Z_\theta$ is implicitly learned as a parameter.
+\end{theorem}
+
+\begin{remark}[InfoNCE and Contrastive Learning]
+    NCE inspired modern contrastive learning. The \textbf{InfoNCE} loss used in methods like SimCLR:
+    \[
+        \mathcal{L}_{\text{InfoNCE}} = -\log \frac{\exp(s(x, x^+))}{\exp(s(x, x^+)) + \sum_{j=1}^{k} \exp(s(x, x_j^-))}
+    \]
+    where $x^+$ is a positive pair (augmentation of $x$) and $x_j^-$ are negative samples.
+
+    This is NCE applied to learn representations where similar items have low ``energy'' (high similarity).
+\end{remark}
+
+% ============================================================
+\section{Hopfield Networks}
+
+Hopfield networks are a classical EBM for associative memory.
+
+\begin{definition}[Hopfield Network]
+    A \textbf{Hopfield network} is a recurrent network of $n$ binary units $x_i \in \{-1, +1\}$ with symmetric connections. The energy function is:
+    \[
+        E(x) = -\frac{1}{2} \sum_{i \neq j} w_{ij} x_i x_j - \sum_i b_i x_i = -\frac{1}{2} x^\top W x - b^\top x
+    \]
+    where $W$ is symmetric with zero diagonal, and $b$ is the bias vector.
+\end{definition}
+
+\begin{theorem}[Hopfield Dynamics]
+    The asynchronous update rule:
+    \[
+        x_i \leftarrow \text{sign}\left( \sum_{j \neq i} w_{ij} x_j + b_i \right)
+    \]
+    \textbf{always decreases or maintains energy}. The network converges to a local minimum.
+
+    \begin{proof}
+        When updating unit $i$, the energy change is:
+        \[
+            \Delta E = -\Delta x_i \left( \sum_{j \neq i} w_{ij} x_j + b_i \right)
+        \]
+        The update rule ensures $\Delta x_i$ has the same sign as the sum, so $\Delta E \leq 0$.
+    \end{proof}
+\end{theorem}
+
+\begin{remark}[Associative Memory]
+    Hopfield networks store patterns as energy minima:
+    \begin{itemize}
+        \item \textbf{Storage}: Given patterns $\{\xi^1, \ldots, \xi^p\}$, set weights via Hebbian rule: $w_{ij} = \frac{1}{n} \sum_{\mu=1}^{p} \xi_i^\mu \xi_j^\mu$
+        \item \textbf{Retrieval}: Initialize with corrupted pattern, run dynamics until convergence
+        \item \textbf{Capacity}: Can reliably store approximately $0.14n$ patterns
+    \end{itemize}
+    The network performs pattern completion---given partial information, it recovers the full stored pattern.
+\end{remark}
+
+% ============================================================
+\section{Restricted Boltzmann Machines}
+
+RBMs are a tractable class of EBMs with hidden variables.
+
+\begin{definition}[Restricted Boltzmann Machine]
+    An \textbf{RBM} consists of:
+    \begin{itemize}
+        \item Visible units $v \in \{0, 1\}^m$ (observed data)
+        \item Hidden units $h \in \{0, 1\}^n$ (latent features)
+        \item No connections within layers (``restricted'')
+    \end{itemize}
+
+    The energy function is:
+    \[
+        E(v, h) = -v^\top W h - b^\top v - c^\top h
+    \]
+    where $W \in \mathbb{R}^{m \times n}$ are weights, $b \in \mathbb{R}^m$ and $c \in \mathbb{R}^n$ are biases.
+\end{definition}
+
+\begin{theorem}[RBM Conditional Independence]
+    Due to the bipartite structure, conditionals factorize:
+    \begin{align*}
+        p(h | v) &= \prod_{j=1}^{n} p(h_j | v) = \prod_{j=1}^{n} \sigma\left( \sum_i w_{ij} v_i + c_j \right)^{h_j} \\
+        p(v | h) &= \prod_{i=1}^{m} p(v_i | h) = \prod_{i=1}^{m} \sigma\left( \sum_j w_{ij} h_j + b_i \right)^{v_i}
+    \end{align*}
+    This enables efficient \textbf{block Gibbs sampling}: sample all hidden units in parallel given visible, and vice versa.
+\end{theorem}
+
+\begin{figure}[h]
+\centering
+    \begin{tikzpicture}[>=stealth, scale=0.85]
+        % Visible layer
+        \foreach \i in {1,...,5} {
+            \node[circle, draw, minimum size=0.7cm, fill=blue!20] (v\i) at (\i*1.2, 0) {};
+        }
+        \node at (0, 0) {$v$};
+
+        % Hidden layer
+        \foreach \i in {1,...,4} {
+            \node[circle, draw, minimum size=0.7cm, fill=orange!20] (h\i) at (\i*1.2 + 0.6, 2) {};
+        }
+        \node at (0, 2) {$h$};
+
+        % Connections (all visible to all hidden)
+        \foreach \i in {1,...,5} {
+            \foreach \j in {1,...,4} {
+                \draw[gray] (v\i) -- (h\j);
+            }
+        }
+
+        % Labels
+        \node[below] at (3, -0.6) {\small Visible (observed)};
+        \node[above] at (3.6, 2.5) {\small Hidden (latent)};
+
+        % Note about no intra-layer connections
+        \draw[<->, red, dashed, thick] (v1) to[bend right=30] node[below, font=\small] {no connection} (v2);
+    \end{tikzpicture}
+\caption{RBM architecture: bipartite graph with no within-layer connections, enabling efficient Gibbs sampling.}
+\end{figure}
+
+\begin{remark}[RBM Training with CD]
+    RBMs are trained using Contrastive Divergence:
+    \begin{enumerate}
+        \item \textbf{Positive phase}: Clamp visible units to data, sample hidden: $h^{(0)} \sim p(h | v^{(0)})$
+        \item \textbf{Reconstruction}: Sample visible from hidden: $v^{(1)} \sim p(v | h^{(0)})$
+        \item \textbf{Negative phase}: Sample hidden again: $h^{(1)} \sim p(h | v^{(1)})$
+        \item \textbf{Update}: $\Delta W \propto v^{(0)} h^{(0)\top} - v^{(1)} h^{(1)\top}$
+    \end{enumerate}
+    This is CD-1: one step of Gibbs sampling approximates the negative phase.
+\end{remark}
+
+% ============================================================
+\section{Connection to Modern Generative Models}
+
+EBMs connect to many modern approaches in deep learning.
+
+\begin{remark}[Diffusion Models as Score-Based EBMs]
+    Diffusion models can be viewed as a hierarchy of EBMs at different noise levels:
+    \begin{itemize}
+        \item Define noised distributions: $p_t(x) = \int p_{\text{data}}(x_0) \mathcal{N}(x; \sqrt{\bar{\alpha}_t} x_0, (1-\bar{\alpha}_t)I) \, dx_0$
+        \item Train a \textbf{score network} $s_\theta(x, t) \approx \nabla_x \log p_t(x)$
+        \item Generate by following the score (Langevin dynamics or probability flow ODE)
+    \end{itemize}
+    The score network implicitly defines an energy: $E_\theta(x, t) = -\int s_\theta(x', t) \cdot dx'$ (path integral).
+\end{remark}
+
+\begin{remark}[GANs vs EBMs]
+    GANs and EBMs differ in how they handle the negative phase:
+    \begin{center}
+    \begin{tabular}{lcc}
+        \hline
+        & \textbf{EBM} & \textbf{GAN} \\
+        \hline
+        Negative samples & MCMC from $p_\theta$ & Generator $G(z)$ \\
+        Training signal & $\nabla_\theta E_\theta(x')$ & Discriminator gradient \\
+        Mode coverage & Good (in principle) & Mode collapse risk \\
+        Sampling speed & Slow (MCMC) & Fast (feedforward) \\
+        \hline
+    \end{tabular}
+    \end{center}
+    GANs amortize MCMC sampling into a generator network.
+\end{remark}
+
+\begin{remark}[VAEs and the Free Energy]
+    Variational autoencoders relate to EBMs through the \textbf{free energy}:
+    \[
+        \mathcal{F}(x; q) = \mathbb{E}_{z \sim q(z|x)}[E_\theta(x, z)] - H(q(z|x))
+    \]
+    The ELBO is: $\log p_\theta(x) \geq -\mathcal{F}(x; q)$. VAEs optimize this bound using:
+    \begin{itemize}
+        \item Energy: $E_\theta(x, z) = -\log p_\theta(x|z) - \log p(z)$
+        \item Variational distribution: $q_\phi(z|x)$ (encoder)
+    \end{itemize}
+\end{remark}
+
+\begin{remark}[Modern Hopfield Networks and Attention]
+    There's a deep connection between Hopfield networks and attention:
+    \begin{itemize}
+        \item \textbf{Classical Hopfield}: $E(x) = -\frac{1}{2}x^\top W x$, capacity $\sim 0.14n$
+        \item \textbf{Modern Hopfield}: $E(x) = -\text{lse}(Wx) + \frac{1}{2}x^\top x$, exponential capacity
+        \item \textbf{Attention}: The softmax attention mechanism corresponds to one step of modern Hopfield dynamics
+    \end{itemize}
+    The query-key-value attention can be seen as energy-based pattern retrieval!
+\end{remark}
+
+% ============================================================
+\section{Sampling from EBMs: Langevin Dynamics}
+
+To generate samples, we need MCMC methods that use energy gradients.
+
+\begin{definition}[Langevin Dynamics]
+    \textbf{Langevin dynamics} generates samples by simulating:
+    \[
+        x_{t+1} = x_t - \frac{\epsilon}{2} \nabla_x E_\theta(x_t) + \sqrt{\epsilon} \cdot z_t, \quad z_t \sim \mathcal{N}(0, I)
+    \]
+    where $\epsilon$ is the step size. As $\epsilon \to 0$ and $t \to \infty$, the distribution of $x_t$ converges to $p_\theta(x) \propto \exp(-E_\theta(x))$.
+\end{definition}
+
+\begin{remark}[Intuition for Langevin Dynamics]
+    The update has two components:
+    \begin{itemize}
+        \item \textbf{Gradient descent}: $-\frac{\epsilon}{2} \nabla_x E_\theta(x)$ moves toward lower energy (modes)
+        \item \textbf{Noise injection}: $\sqrt{\epsilon} \cdot z$ prevents collapse to a single mode
+    \end{itemize}
+    The balance between these terms ensures samples from the full distribution, not just the mode.
+\end{remark}
+
+\begin{theorem}[Langevin as Gradient Flow + Brownian Motion]
+    Langevin dynamics is the discretization of the stochastic differential equation:
+    \[
+        dx = -\nabla_x E_\theta(x) \, dt + \sqrt{2} \, dW_t
+    \]
+    where $W_t$ is standard Brownian motion. The stationary distribution is exactly $p_\theta(x) \propto \exp(-E_\theta(x))$.
+\end{theorem}
+
+\begin{figure}[h]
+\centering
+    \begin{tikzpicture}[>=stealth, scale=0.75]
+        % Energy contours (2D Gaussian mixture)
+        \draw[gray, thin] (0,0) ellipse (1.5 and 1);
+        \draw[gray, thin] (3,0.5) ellipse (1.2 and 0.8);
+
+        % Trajectory
+        \coordinate (start) at (-3, 2);
+        \coordinate (p1) at (-2, 1.5);
+        \coordinate (p2) at (-1.5, 0.8);
+        \coordinate (p3) at (-0.8, 0.3);
+        \coordinate (p4) at (-0.2, -0.1);
+        \coordinate (p5) at (0.3, 0.2);
+
+        \draw[->, thick, blue] (start) -- (p1);
+        \draw[->, thick, blue] (p1) -- (p2);
+        \draw[->, thick, blue] (p2) -- (p3);
+        \draw[->, thick, blue] (p3) -- (p4);
+        \draw[->, thick, blue] (p4) -- (p5);
+
+        \fill[red] (start) circle (3pt);
+        \fill[green!70!black] (p5) circle (3pt);
+
+        % Labels
+        \node[above, font=\small] at (start) {start};
+        \node[below right, font=\small] at (0, 0) {mode 1};
+        \node[below right, font=\small] at (3, 0.5) {mode 2};
+
+        % Legend
+        \node[font=\small] at (5, 2) {Langevin trajectory};
+        \draw[->, thick, blue] (4, 1.5) -- (5, 1.5);
+    \end{tikzpicture}
+\caption{Langevin dynamics: noisy gradient descent that samples from the energy-based distribution.}
+\end{figure}
+
+\begin{remark}[Metropolis-Adjusted Langevin (MALA)]
+    Pure Langevin dynamics has discretization error. \textbf{MALA} adds a Metropolis-Hastings correction:
+    \begin{enumerate}
+        \item Propose: $x' = x - \frac{\epsilon}{2} \nabla_x E_\theta(x) + \sqrt{\epsilon} \cdot z$
+        \item Accept with probability: $\min\left(1, \frac{p_\theta(x') q(x|x')}{p_\theta(x) q(x'|x)}\right)$
+    \end{enumerate}
+    This ensures exact sampling even with finite step size $\epsilon$.
+\end{remark}
+
+% ============================================================
+\section{Summary: The EBM Perspective}
+
+\begin{remark}[Why Energy-Based Models?]\leavevmode
+    \begin{itemize}
+        \item \textbf{Flexibility}: Any function $E_\theta(x)$ defines a valid model (no normalization required for energy)
+        \item \textbf{Compositionality}: Energies add: $E_{\text{joint}}(x) = E_1(x) + E_2(x)$ combines constraints
+        \item \textbf{Unification}: Many models (Hopfield, RBM, diffusion) are EBMs in disguise
+        \item \textbf{Physical interpretation}: Connects to statistical mechanics and thermodynamics
+    \end{itemize}
+\end{remark}
+
+\begin{remark}[Key Training Methods]\leavevmode
+    \begin{center}
+    \begin{tabular}{lll}
+        \hline
+        \textbf{Method} & \textbf{Avoids $Z_\theta$?} & \textbf{Key Idea} \\
+        \hline
+        Maximum Likelihood & No & Requires MCMC for gradient \\
+        Contrastive Divergence & Partially & Short MCMC chains \\
+        Score Matching & Yes & Match score function \\
+        Noise Contrastive Est. & Yes & Classify data vs noise \\
+        \hline
+    \end{tabular}
+    \end{center}
+\end{remark}
+
+\begin{remark}[The Fundamental Trade-off]
+    EBMs face a core tension:
+    \begin{itemize}
+        \item \textbf{Expressivity}: Flexible energy functions can model complex distributions
+        \item \textbf{Tractability}: Sampling and evaluation require approximations
+    \end{itemize}
+    Modern approaches (diffusion models, flow matching) resolve this by:
+    \begin{enumerate}
+        \item Learning the \textbf{score} instead of the energy directly
+        \item Using \textbf{hierarchical} noise schedules for tractable sampling
+        \item Replacing MCMC with \textbf{amortized} sampling (learned generators)
+    \end{enumerate}
+\end{remark}
+
+% ============================================================
+\section{EBMs vs Transformers}
+
+Energy-based models and transformers represent fundamentally different paradigms for modeling data.
+
+\begin{remark}[Architectural Philosophy]\leavevmode
+    \begin{itemize}
+        \item \textbf{Transformers}: Discriminative/autoregressive. Model $p(x_t | x_{<t})$ directly via next-token prediction. Fast feedforward sampling.
+        \item \textbf{EBMs}: Generative/holistic. Model the full joint $p(x) \propto \exp(-E(x))$. Evaluate entire configurations simultaneously.
+    \end{itemize}
+\end{remark}
+
+\begin{remark}[Advantages of EBMs over Transformers]\leavevmode
+    \begin{enumerate}
+        \item \textbf{Bidirectional coherence}: EBMs score entire sequences holistically, avoiding the left-to-right bias of autoregressive models. Can naturally handle:
+        \begin{itemize}
+            \item Infilling (filling in the middle)
+            \item Global consistency constraints
+            \item Non-sequential dependencies
+        \end{itemize}
+
+        \item \textbf{Compositionality}: Energy functions compose additively:
+        \[
+            E_{\text{combined}}(x) = E_{\text{grammar}}(x) + E_{\text{style}}(x) + E_{\text{topic}}(x)
+        \]
+        Multiple constraints can be combined at inference time without retraining.
+
+        \item \textbf{Flexible conditioning}: Any variable can be conditioned on any other---no fixed generation order. Useful for constraint satisfaction problems.
+
+        \item \textbf{Iterative refinement}: Sampling via MCMC naturally supports ``thinking longer''---more compute at inference improves quality.
+
+        \item \textbf{Unnormalized modeling}: No need to model the full distribution---only relative preferences matter. This is natural for ranking, preference learning, and critic models.
+    \end{enumerate}
+\end{remark}
+
+\begin{remark}[Disadvantages of EBMs vs Transformers]\leavevmode
+    \begin{enumerate}
+        \item \textbf{Slow sampling}: MCMC requires many iterative steps vs single feedforward pass. Transformers generate tokens in $O(n)$ forward passes; EBMs may need $O(1000+)$ MCMC steps.
+
+        \item \textbf{Training instability}: The negative phase requires sampling from the model, creating a chicken-and-egg problem. Mode collapse and divergence are common failure modes.
+
+        \item \textbf{No likelihood}: Cannot compute exact $p(x)$ due to intractable $Z_\theta$. This makes:
+        \begin{itemize}
+            \item Model comparison difficult (no perplexity)
+            \item Anomaly detection unreliable
+            \item Density estimation approximate
+        \end{itemize}
+
+        \item \textbf{Scaling challenges}: Transformers benefit from clear scaling laws (more compute $\Rightarrow$ better). EBM scaling is less understood---MCMC doesn't parallelize as well.
+
+        \item \textbf{Discrete data}: EBMs work best in continuous spaces where gradients flow. Discrete sequences (text) require:
+        \begin{itemize}
+            \item Continuous relaxations (Gumbel-softmax)
+            \item Embedding space operations
+            \item Specialized discrete MCMC
+        \end{itemize}
+    \end{enumerate}
+\end{remark}
+
+\begin{figure}[h]
+\centering
+    \begin{tikzpicture}[>=stealth, scale=0.8]
+        % Transformer - left to right
+        \begin{scope}
+            \node[font=\bfseries] at (2, 3) {Transformer};
+            \foreach \i in {1,...,5} {
+                \node[draw, minimum size=0.6cm, fill=blue!20] (t\i) at (\i*0.8, 2) {};
+            }
+            \draw[->, thick] (0.5, 2) -- (t1);
+            \foreach \i in {1,...,4} {
+                \pgfmathtruncatemacro{\j}{\i+1}
+                \draw[->, thick] (t\i) -- (t\j);
+            }
+            \node[font=\small] at (2, 1.2) {Sequential: $p(x_t | x_{<t})$};
+        \end{scope}
+
+        % EBM - holistic
+        \begin{scope}[shift={(7, 0)}]
+            \node[font=\bfseries] at (2, 3) {Energy-Based Model};
+            \foreach \i in {1,...,5} {
+                \node[draw, minimum size=0.6cm, fill=orange!20] (e\i) at (\i*0.8, 2) {};
+            }
+            % Connections showing holistic evaluation
+            \draw[thick, red, rounded corners] (0.5, 1.5) rectangle (4.5, 2.5);
+            \draw[->, thick] (2.5, 1.5) -- (2.5, 0.8) node[below] {$E(x)$};
+            \node[font=\small] at (2, 0.3) {Holistic: score entire $x$};
+        \end{scope}
+    \end{tikzpicture}
+\caption{Transformers model sequences left-to-right; EBMs evaluate entire configurations holistically.}
+\end{figure}
+
+% ============================================================
+\section{Reasoning in Energy-Based Models}
+
+A key insight: \emph{inference-time compute} in EBMs can be viewed as a form of reasoning.
+
+\begin{definition}[Reasoning as Energy Minimization]
+    In the EBM framework, \textbf{reasoning} is the iterative process of refining a configuration $x$ to minimize energy:
+    \[
+        x^{(t+1)} = x^{(t)} - \eta \nabla_x E_\theta(x^{(t)}) + \text{noise}
+    \]
+    Each step can be interpreted as:
+    \begin{itemize}
+        \item \textbf{Gradient}: Direction toward more coherent/consistent states
+        \item \textbf{Noise}: Exploration to escape local minima
+        \item \textbf{Iterations}: ``Thinking time''---more steps = deeper reasoning
+    \end{itemize}
+\end{definition}
+
+\begin{remark}[Test-Time Compute Scaling]
+    Unlike transformers where inference is a single forward pass, EBMs naturally support \textbf{test-time compute scaling}:
+    \begin{itemize}
+        \item Easy problems: Few MCMC steps suffice
+        \item Hard problems: Run more iterations to find lower-energy solutions
+        \item The same model can trade off speed vs quality at inference time
+    \end{itemize}
+    This mirrors human reasoning: harder problems require more ``thinking.''
+\end{remark}
+
+\begin{remark}[Constraint Satisfaction as Reasoning]
+    Many reasoning tasks are constraint satisfaction problems. EBMs handle these naturally:
+    \begin{enumerate}
+        \item \textbf{Sudoku}: $E(x) = \sum_{\text{constraints}} \mathbb{1}[\text{violated}]$. MCMC finds valid solutions.
+        \item \textbf{Planning}: $E(\tau) = -R(\tau) + \lambda \cdot \text{constraint\_violations}(\tau)$
+        \item \textbf{Logical inference}: Energy penalties for logical inconsistencies
+    \end{enumerate}
+    The energy function encodes ``what makes a solution good''; MCMC searches for it.
+\end{remark}
+
+\begin{remark}[Chain-of-Thought as Energy Landscape Navigation]
+    An intriguing connection to chain-of-thought reasoning:
+    \begin{itemize}
+        \item \textbf{CoT in transformers}: Generate intermediate tokens $z$ before answer $y$
+        \item \textbf{EBM interpretation}: The chain of thought $z$ helps navigate to low-energy regions
+        \[
+            E(x, z, y) = E_{\text{problem}}(x) + E_{\text{reasoning}}(z | x) + E_{\text{answer}}(y | z)
+        \]
+        \item Each reasoning step reduces energy toward the final answer
+    \end{itemize}
+    This suggests CoT works by providing ``stepping stones'' through the energy landscape.
+\end{remark}
+
+\begin{remark}[Amortized vs Non-Amortized Reasoning]\leavevmode
+    \begin{center}
+    \begin{tabular}{lll}
+        \hline
+        & \textbf{Amortized (Transformers)} & \textbf{Non-Amortized (EBMs)} \\
+        \hline
+        Training & Learn to predict directly & Learn energy landscape \\
+        Inference & Single forward pass & Iterative optimization \\
+        Generalization & Interpolation & Can extrapolate via search \\
+        Novel problems & May fail silently & Can reason (slowly) \\
+        \hline
+    \end{tabular}
+    \end{center}
+    Amortized models are fast but brittle; EBMs are slow but can handle out-of-distribution inputs via search.
+\end{remark}
+
+% ============================================================
+\section{Notable Energy-Based Models}
+
+A survey of influential EBMs throughout deep learning history.
+
+\begin{remark}[Classical EBMs (1980s--2000s)]\leavevmode
+    \begin{itemize}
+        \item \textbf{Hopfield Networks} (1982): Associative memory with $\sim 0.14n$ pattern capacity. Showed neural networks can store and retrieve patterns.
+
+        \item \textbf{Boltzmann Machines} (1985): Hinton \& Sejnowski. General EBM with hidden units, but intractable training.
+
+        \item \textbf{Restricted Boltzmann Machines} (2006): Hinton. Tractable training via CD, enabled deep belief networks. Key breakthrough for deep learning revival.
+    \end{itemize}
+\end{remark}
+
+\begin{remark}[Deep Energy-Based Models (2010s)]\leavevmode
+    \begin{itemize}
+        \item \textbf{Deep Boltzmann Machines} (Salakhutdinov \& Hinton, 2009): Multiple hidden layers, better feature learning, but difficult to train.
+
+        \item \textbf{NADE/MADE} (2011--2015): Autoregressive density estimators that can be viewed as tractable EBMs with specific structure.
+
+        \item \textbf{Neural Autoregressive Flows}: Transform simple distributions through invertible networks---implicit EBMs with tractable sampling.
+    \end{itemize}
+\end{remark}
+
+\begin{remark}[Modern EBMs (2019--Present)]\leavevmode
+    \begin{itemize}
+        \item \textbf{IGEBM} (Du \& Mordatch, 2019): ``Implicit Generation and Modeling with Energy-Based Models.'' Showed deep ConvNets as energy functions work for image generation via Langevin dynamics.
+
+        \item \textbf{JEM} (Grathwohl et al., 2020): ``Joint Energy-based Model.'' Unified classifier and generative model: $p(x, y) \propto \exp(-E_\theta(x, y))$. A classifier's logits define an energy!
+
+        \item \textbf{Score-Based Generative Models} (Song \& Ermon, 2019): Learn $\nabla_x \log p(x)$ directly via denoising score matching. Foundation for diffusion models.
+
+        \item \textbf{Energy-Based Models for Text} (Deng et al., 2020): Residual EBMs that augment autoregressive LMs with global coherence scoring.
+
+        \item \textbf{Modern Hopfield Networks} (Ramsauer et al., 2020): Exponential storage capacity, connection to transformer attention. Energy: $E(\xi) = -\text{lse}(X^\top \xi) + \frac{1}{2}\|\xi\|^2$
+    \end{itemize}
+\end{remark}
+
+\begin{remark}[State-of-the-Art Applications]\leavevmode
+    \begin{itemize}
+        \item \textbf{Diffusion Models} (DDPM, 2020; Stable Diffusion, DALL-E): Score-based EBMs dominate image generation. Technically EBMs trained via denoising score matching.
+
+        \item \textbf{Classifier-Free Guidance}: Use energy interpretation to strengthen conditioning: $\tilde{E}(x|c) = E(x|c) - w \cdot E(x|\emptyset)$
+
+        \item \textbf{Energy-Based Reward Models}: In RLHF, the reward model $r(x, y)$ is essentially an energy function for preference learning.
+
+        \item \textbf{Contrastive Learning} (SimCLR, CLIP): InfoNCE objective is NCE applied to representation learning---an implicit EBM over embeddings.
+    \end{itemize}
+\end{remark}
+
+% ============================================================
+\section{EBMs vs Diffusion Models: A Detailed Comparison}
+
+Diffusion models are often called ``score-based generative models''---they are a specific, highly successful instantiation of the EBM framework.
+
+\begin{definition}[Diffusion Models as Hierarchical EBMs]
+    A diffusion model defines a sequence of distributions at noise levels $t \in [0, T]$:
+    \[
+        p_t(x) = \int p_{\text{data}}(x_0) \, \mathcal{N}(x; \sqrt{\bar{\alpha}_t} x_0, (1 - \bar{\alpha}_t) I) \, dx_0
+    \]
+    The model learns a \textbf{score network} $s_\theta(x, t) \approx \nabla_x \log p_t(x)$.
+
+    This implicitly defines an energy at each noise level:
+    \[
+        E_\theta(x, t) = -\int^x s_\theta(x', t) \cdot dx' \quad \text{(up to constant)}
+    \]
+\end{definition}
+
+\begin{remark}[Key Differences]\leavevmode
+    \begin{center}
+    \begin{tabular}{lll}
+        \hline
+        \textbf{Aspect} & \textbf{Classical EBM} & \textbf{Diffusion Model} \\
+        \hline
+        What's learned & Energy $E_\theta(x)$ & Score $s_\theta(x, t) = -\nabla_x E$ \\
+        Training & Contrastive divergence & Denoising score matching \\
+        Noise levels & Single distribution & Hierarchy of noise levels \\
+        Sampling & MCMC (slow, general) & Ancestral/ODE (fast, structured) \\
+        Partition function & Intractable & Avoided via score \\
+        \hline
+    \end{tabular}
+    \end{center}
+\end{remark}
+
+\begin{remark}[Why Diffusion Models Succeeded Where Classical EBMs Struggled]\leavevmode
+    \begin{enumerate}
+        \item \textbf{Stable training}: Denoising score matching has a simple regression loss---no adversarial dynamics or MCMC in the training loop.
+        \[
+            \mathcal{L}_{\text{DSM}} = \mathbb{E}_{x_0, \epsilon, t}\left[ \| s_\theta(x_t, t) - \nabla_{x_t} \log p(x_t | x_0) \|^2 \right]
+        \]
+        The target $\nabla_{x_t} \log p(x_t | x_0) = -\epsilon / \sigma_t$ is known in closed form!
+
+        \item \textbf{Coarse-to-fine generation}: High noise levels capture global structure; low noise levels add details. This curriculum makes learning easier.
+
+        \item \textbf{Structured sampling}: Instead of random-walk MCMC, diffusion uses a principled denoising process:
+        \[
+            x_{t-1} = \frac{1}{\sqrt{\alpha_t}}\left( x_t + (1 - \alpha_t) s_\theta(x_t, t) \right) + \sigma_t z
+        \]
+        This is deterministic up to the noise injection---much more directed than Langevin dynamics.
+
+        \item \textbf{Theoretical guarantees}: The forward diffusion has a known stationary distribution (Gaussian). Reversal is well-characterized by Anderson's theorem.
+    \end{enumerate}
+\end{remark}
+
+\begin{figure}[h]
+\centering
+    \begin{tikzpicture}[>=stealth, scale=0.75]
+        % Classical EBM
+        \begin{scope}
+            \node[font=\bfseries] at (2, 4) {Classical EBM};
+            % Energy landscape
+            \draw[thick, blue, domain=-0.5:4.5, samples=50] plot (\x, {0.3*sin(3*\x r)*sin(3*\x r) + 0.5});
+            \draw[->] (-0.5, 0) -- (4.5, 0) node[right] {$x$};
+            \draw[->] (0, 0) -- (0, 2.5) node[above] {$E(x)$};
+            % MCMC path (jagged to show randomness)
+            \draw[->, red, thick]
+                (0.5, 1.8) -- (0.8, 1.5) -- (1.1, 1.7) -- (1.4, 1.3) -- (1.7, 1.5) -- (2.0, 1.1) -- (2.3, 1.3) -- (2.6, 0.9) -- (2.9, 1.0) -- (3.2, 0.7) -- (3.5, 0.6);
+            \node[font=\small] at (2, -0.5) {MCMC: random walk};
+        \end{scope}
+
+        % Diffusion
+        \begin{scope}[shift={(7, 0)}]
+            \node[font=\bfseries] at (2, 4) {Diffusion Model};
+            % Noise levels
+            \foreach \i/\c in {0/red!80, 1/red!60, 2/orange, 3/yellow!80!black, 4/green!60!black} {
+                \pgfmathsetmacro{\y}{0.5 + \i*0.4}
+                \pgfmathsetmacro{\spread}{2 - \i*0.35}
+                \draw[\c, thick, domain={2-\spread}:{2+\spread}, samples=30]
+                    plot (\x, {\y + 0.3*exp(-(\x-2)*(\x-2)/(0.1 + \i*0.15))});
+            }
+            \draw[->] (-0.5, 0) -- (4.5, 0) node[right] {$x$};
+            \draw[->] (0, 0) -- (0, 2.8) node[above] {$t$};
+            % Denoising path (straight)
+            \draw[->, blue, very thick] (3.5, 2.3) -- (3, 1.9) -- (2.5, 1.5) -- (2.2, 1.1) -- (2, 0.7);
+            \node[font=\small] at (2, -0.5) {Denoise: directed path};
+        \end{scope}
+    \end{tikzpicture}
+\caption{Classical EBMs use random-walk MCMC; diffusion models follow a structured denoising trajectory through noise levels.}
+\end{figure}
+
+\begin{remark}[When to Use Each]\leavevmode
+    \begin{itemize}
+        \item \textbf{Use Diffusion Models when}:
+        \begin{itemize}
+            \item High-quality sample generation is the goal
+            \item Data is continuous (images, audio, video)
+            \item Training stability is important
+            \item You want well-understood scaling behavior
+        \end{itemize}
+
+        \item \textbf{Use Classical EBMs when}:
+        \begin{itemize}
+            \item You need to compose multiple energy functions at test time
+            \item The task involves constraint satisfaction or optimization
+            \item You want a unified model for classification and generation (JEM)
+            \item Working with discrete/structured data where diffusion is awkward
+            \item You need explicit energy values for ranking or decision-making
+        \end{itemize}
+    \end{itemize}
+\end{remark}
+
+\begin{remark}[Hybrid Approaches]
+    Modern systems often combine both paradigms:
+    \begin{itemize}
+        \item \textbf{Classifier guidance}: Use a classifier's energy to guide diffusion sampling
+        \item \textbf{Composable diffusion}: Add energy terms from multiple diffusion models
+        \item \textbf{Energy-based refinement}: Use EBM to refine outputs from fast generators
+        \item \textbf{Diffusion for EBM training}: Use diffusion to generate negative samples for EBM training
+    \end{itemize}
+\end{remark}

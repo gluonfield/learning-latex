@@ -1813,7 +1813,8 @@ Harmonic functions are intimately connected to holomorphic functions: the real a
   \]
 \end{definition}
 
-\begin{center}
+\begin{figure}[ht]
+  \centering
   \begin{tikzpicture}[scale=0.85]
     % Level curves of a harmonic function (like Re(z^2) = x^2 - y^2)
     \draw[->] (-2.5,0) -- (2.5,0) node[right] {$x$};
@@ -1841,11 +1842,9 @@ Harmonic functions are intimately connected to holomorphic functions: the real a
 
     \node[blue] at (2.2,-1.5) {\small $u = c$};
     \node[red] at (1.8,1.8) {\small $v = c$};
-
-    \node at (0,-3.2) {Level curves of $u = x^2 - y^2$ and $v = 2xy$};
-    \node at (0,-3.8) {\small (real and imaginary parts of $z^2$)};
   \end{tikzpicture}
-\end{center}
+  \caption{Level curves of $u = x^2 - y^2$ (blue) and $v = 2xy$ (red), the real and imaginary parts of $z^2$. The two families of curves are orthogonal.}
+\end{figure}
 
 \begin{theorem}[Holomorphic implies harmonic]
   If $f = u + iv$ is holomorphic on an open set $U$, then both $u$ and $v$ are harmonic on $U$.
